@@ -54,7 +54,7 @@ Goal:
 - Copy report text.
 
 Status:
-- pending
+- completed
 
 ## Phase 5 - Settings
 

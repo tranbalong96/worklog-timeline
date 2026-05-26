@@ -3,14 +3,15 @@ import { X } from 'lucide-react';
 
 type ModalProps = {
   children: ReactNode;
+  maxWidthClassName?: string;
   title: string;
   onClose: () => void;
 };
 
-export function Modal({ children, title, onClose }: ModalProps) {
+export function Modal({ children, maxWidthClassName = 'max-w-xl', title, onClose }: ModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4 py-6">
-      <div className="w-full max-w-xl rounded-lg bg-white shadow-xl">
+      <div className={`max-h-[90vh] w-full overflow-y-auto rounded-lg bg-white shadow-xl ${maxWidthClassName}`}>
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
           <h2 className="text-lg font-semibold text-slate-950">{title}</h2>
           <button
