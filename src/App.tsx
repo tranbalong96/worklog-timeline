@@ -1,13 +1,19 @@
 import { useEffect, useState } from 'react';
 import { CalendarDays, FileText, Settings, Sparkles } from 'lucide-react';
 import { AppShell } from './components/AppShell';
-import { addTask, deleteTask, saveWorklog, updateTask } from './helpers/appDataHelper';
+import {
+  addTask,
+  deleteTask,
+  saveWorklog,
+  updateSettings,
+  updateTask,
+} from './helpers/appDataHelper';
 import { AITaskGeneratorPage } from './pages/AITaskGeneratorPage';
 import { DailyReportPage } from './pages/DailyReportPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { TimelinePage } from './pages/TimelinePage';
 import { loadAppData, saveAppData } from './services/storageService';
-import type { TaskFormData, WorklogFormData } from './types/worklog';
+import type { Settings as AppSettings, TaskFormData, WorklogFormData } from './types/worklog';
 
 type PageKey = 'timeline' | 'daily-report' | 'ai-task-generator' | 'settings';
 
@@ -68,7 +74,14 @@ function App() {
     ),
     'daily-report': <DailyReportPage tasks={appData.tasks} worklogs={appData.worklogs} />,
     'ai-task-generator': <AITaskGeneratorPage />,
-    settings: <SettingsPage settings={appData.settings} />,
+    settings: (
+      <SettingsPage
+        settings={appData.settings}
+        onUpdateSettings={(settings: AppSettings) =>
+          setAppData((currentData) => updateSettings(currentData, settings))
+        }
+      />
+    ),
   }[activePage];
 
   return (

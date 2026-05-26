@@ -1,4 +1,11 @@
-import type { AppData, Task, TaskFormData, WorklogEntry, WorklogFormData } from '../types/worklog';
+import type {
+  AppData,
+  Settings,
+  Task,
+  TaskFormData,
+  WorklogEntry,
+  WorklogFormData,
+} from '../types/worklog';
 
 function getTimestamp(): string {
   return new Date().toISOString();
@@ -79,5 +86,12 @@ export function saveWorklog(appData: AppData, worklogData: WorklogFormData): App
   return {
     ...appData,
     worklogs: [...remainingWorklogs, worklog],
+  };
+}
+
+export function updateSettings(appData: AppData, settings: Settings): AppData {
+  return {
+    ...appData,
+    settings,
   };
 }
