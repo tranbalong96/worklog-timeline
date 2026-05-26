@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { CalendarDays, Settings, Sparkles } from 'lucide-react';
 import { AppShell } from './components/AppShell';
 import { AITaskGeneratorPage } from './pages/AITaskGeneratorPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { TimelinePage } from './pages/TimelinePage';
+import { loadAppData, saveAppData } from './services/storageService';
 
 type PageKey = 'timeline' | 'ai-task-generator' | 'settings';
 
@@ -31,11 +32,16 @@ const pages = [
 
 function App() {
   const [activePage, setActivePage] = useState<PageKey>('timeline');
+  const [appData] = useState(loadAppData);
+
+  useEffect(() => {
+    saveAppData(appData);
+  }, [appData]);
 
   const pageContent = {
-    timeline: <TimelinePage />,
+    timeline: <TimelinePage tasks={appData.tasks} worklogs={appData.worklogs} />,
     'ai-task-generator': <AITaskGeneratorPage />,
-    settings: <SettingsPage />,
+    settings: <SettingsPage settings={appData.settings} />,
   }[activePage];
 
   return (

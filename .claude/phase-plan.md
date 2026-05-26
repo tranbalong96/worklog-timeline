@@ -19,7 +19,7 @@ Goal:
 - Add default mock data.
 
 Status:
-- pending
+- completed
 
 ## Phase 2 - Timeline View
 
