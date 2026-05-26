@@ -9,7 +9,7 @@ Goal:
 - Create placeholder pages.
 
 Status:
-- pending
+- completed
 
 ## Phase 1 - Data Model And Local Storage
 
