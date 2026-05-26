@@ -97,4 +97,4 @@ Goal:
 - Verify main flows.
 
 Status:
-- pending
+- completed

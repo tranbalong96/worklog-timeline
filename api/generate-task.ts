@@ -134,7 +134,13 @@ async function readResponseText(response: Response): Promise<string> {
 }
 
 function parseTextFromOpenAIResponse(text: string): string {
-  const parsed: unknown = JSON.parse(text);
+  let parsed: unknown;
+
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    return text;
+  }
 
   if (!isRecord(parsed) || !Array.isArray(parsed.choices)) {
     return text;
@@ -150,7 +156,13 @@ function parseTextFromOpenAIResponse(text: string): string {
 }
 
 function parseTextFromGeminiResponse(text: string): string {
-  const parsed: unknown = JSON.parse(text);
+  let parsed: unknown;
+
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    return text;
+  }
 
   if (!isRecord(parsed) || !Array.isArray(parsed.candidates)) {
     return text;
@@ -172,7 +184,13 @@ function parseTextFromGeminiResponse(text: string): string {
 }
 
 function parseTextFromOllamaResponse(text: string): string {
-  const parsed: unknown = JSON.parse(text);
+  let parsed: unknown;
+
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    return text;
+  }
 
   if (!isRecord(parsed)) {
     return text;
@@ -301,7 +319,10 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     return;
   }
 
-  if ((settings.provider === 'gemini' || settings.provider === 'openai-compatible') && !settings.apiKey) {
+  if (
+    (settings.provider === 'gemini' || settings.provider === 'openai-compatible') &&
+    !settings.apiKey
+  ) {
     res.status(400).json({ error: 'API key is required for this provider.' });
     return;
   }

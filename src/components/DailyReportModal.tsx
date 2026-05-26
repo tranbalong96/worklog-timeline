@@ -39,11 +39,25 @@ export function DailyReportModal({ reportDate, tasks, worklogs, onClose }: Daily
   );
   const [customTaskInput, setCustomTaskInput] = useState('');
   const [customTasks, setCustomTasks] = useState<string[]>([]);
-  const [previewText, setPreviewText] = useState('');
+  const [previewText, setPreviewText] = useState(() =>
+    generateDailyReportText({
+      reportDate,
+      previousDate,
+      previousItems,
+      todayItems,
+      customTasks: [],
+    }),
+  );
   const [copyStatus, setCopyStatus] = useState('');
 
-  const selectedPreviousItems = previousItems.filter((item) => selectedItems[item.id]);
-  const selectedTodayItems = todayItems.filter((item) => selectedItems[item.id]);
+  const selectedPreviousItems = useMemo(
+    () => previousItems.filter((item) => selectedItems[item.id]),
+    [previousItems, selectedItems],
+  );
+  const selectedTodayItems = useMemo(
+    () => todayItems.filter((item) => selectedItems[item.id]),
+    [selectedItems, todayItems],
+  );
 
   useEffect(() => {
     setPreviewText(

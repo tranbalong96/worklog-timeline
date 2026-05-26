@@ -199,6 +199,7 @@ export function TimelinePage({
                         type="button"
                         className="flex items-center justify-end px-3 py-4 text-right text-slate-700 hover:bg-slate-50"
                         onClick={() => setLoggingWorklog({ task, date: dateKey })}
+                        aria-label={`Log hours for ${task.code} on ${dateKey}`}
                         title="Log hours"
                       >
                         {formatHours(hours)}
