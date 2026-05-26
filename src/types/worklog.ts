@@ -57,3 +57,18 @@ export type AppData = {
   worklogs: WorklogEntry[];
   dailyReports: DailyReport[];
 };
+
+export type TaskFormData = {
+  code: string;
+  title: string;
+  description: string;
+  type: TaskType;
+  status: TaskStatus;
+};
+
+export type WorklogFormData = {
+  taskId: string;
+  date: string;
+  hours: number;
+  note: string;
+};

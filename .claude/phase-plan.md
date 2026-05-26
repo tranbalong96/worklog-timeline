@@ -42,7 +42,7 @@ Goal:
 - Log hours modal.
 
 Status:
-- pending
+- completed
 
 ## Phase 4 - Daily Report Builder
 
