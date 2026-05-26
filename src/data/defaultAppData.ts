@@ -7,6 +7,8 @@ export const defaultAppData: AppData = {
   settings: {
     defaultWorkHoursPerDay: 8,
     weekStart: 'monday',
+    language: 'en',
+    theme: 'light',
     ai: {
       enabled: false,
       provider: 'disabled',

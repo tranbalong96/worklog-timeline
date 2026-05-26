@@ -1,18 +1,38 @@
 import { Download, RotateCcw, Upload } from 'lucide-react';
 import { useRef, useState, type ChangeEvent } from 'react';
+import { ConfirmDialog } from '../components/ConfirmDialog';
+import { translate } from '../helpers/i18n';
 import {
   createDefaultAppData,
   exportAppDataToJson,
   importAppDataFromJson,
 } from '../services/storageService';
-import type { AIProvider, AISettings, AppData, Settings, WeekStart } from '../types/worklog';
+import type {
+  AIProvider,
+  AISettings,
+  AppData,
+  AppLanguage,
+  AppTheme,
+  Settings,
+  WeekStart,
+} from '../types/worklog';
 
 type SettingsPageProps = {
   appData: AppData;
+  language: AppLanguage;
   settings: Settings;
   onReplaceAppData: (appData: AppData) => void;
   onUpdateSettings: (settings: Settings) => void;
 };
+
+type PendingConfirmation =
+  | {
+      kind: 'import';
+      data: AppData;
+    }
+  | {
+      kind: 'reset';
+    };
 
 const providerOptions: Array<{ value: AIProvider; label: string }> = [
   { value: 'disabled', label: 'Disabled' },
@@ -52,12 +72,15 @@ const providerDefaults: Record<AIProvider, Pick<AISettings, 'baseUrl' | 'model' 
 
 export function SettingsPage({
   appData,
+  language,
   settings,
   onReplaceAppData,
   onUpdateSettings,
 }: SettingsPageProps) {
+  const t = (key: Parameters<typeof translate>[1]) => translate(language, key);
   const importInputRef = useRef<HTMLInputElement>(null);
   const [backupMessage, setBackupMessage] = useState('');
+  const [pendingConfirmation, setPendingConfirmation] = useState<PendingConfirmation | undefined>();
 
   function updateGeneralSettings(nextSettings: Partial<Settings>) {
     onUpdateSettings({
@@ -98,7 +121,7 @@ export function SettingsPage({
     downloadLink.download = `worklog-timeline-backup-${new Date().toISOString().slice(0, 10)}.json`;
     downloadLink.click();
     URL.revokeObjectURL(backupUrl);
-    setBackupMessage('Backup exported.');
+    setBackupMessage(t('backupExported'));
   }
 
   function requestImportJson() {
@@ -120,58 +143,66 @@ export function SettingsPage({
       const importResult = importAppDataFromJson(fileContent);
 
       if (!importResult.ok) {
-        setBackupMessage(importResult.error);
+        setBackupMessage(
+          importResult.error.includes('valid JSON') ? t('importInvalidJson') : t('importInvalidFormat'),
+        );
         return;
       }
 
-      const shouldReplace = window.confirm(
-        'Importing this backup will replace all current Worklog Timeline data. Continue?',
-      );
-
-      if (!shouldReplace) {
-        setBackupMessage('Import cancelled.');
-        return;
-      }
-
-      onReplaceAppData(importResult.data);
-      setBackupMessage('Backup imported.');
+      setPendingConfirmation({ kind: 'import', data: importResult.data });
     };
 
     reader.onerror = () => {
-      setBackupMessage('Could not read the selected file.');
+      setBackupMessage(t('fileReadError'));
     };
 
     reader.readAsText(file);
   }
 
   function resetData() {
-    const shouldReset = window.confirm(
-      'Reset all Worklog Timeline data to default mock data? This replaces current tasks, worklogs, reports, and settings.',
-    );
+    setPendingConfirmation({ kind: 'reset' });
+  }
 
-    if (!shouldReset) {
-      setBackupMessage('Reset cancelled.');
+  function cancelConfirmation() {
+    if (pendingConfirmation?.kind === 'import') {
+      setBackupMessage(t('importCancelled'));
+    }
+
+    if (pendingConfirmation?.kind === 'reset') {
+      setBackupMessage(t('resetCancelled'));
+    }
+
+    setPendingConfirmation(undefined);
+  }
+
+  function confirmPendingAction() {
+    if (!pendingConfirmation) {
       return;
     }
 
-    onReplaceAppData(createDefaultAppData());
-    setBackupMessage('Data reset.');
+    if (pendingConfirmation.kind === 'import') {
+      onReplaceAppData(pendingConfirmation.data);
+      setBackupMessage(t('backupImported'));
+    } else {
+      onReplaceAppData(createDefaultAppData());
+      setBackupMessage(t('dataReset'));
+    }
+
+    setPendingConfirmation(undefined);
   }
 
   return (
     <section className="space-y-5">
       <div>
-        <h2 className="text-xl font-semibold text-slate-950">Settings</h2>
-        <p className="mt-1 text-sm text-slate-600">
-          Configure worklog defaults and optional AI provider details.
-        </p>
+        <h2 className="text-xl font-semibold text-slate-950">{t('settings')}</h2>
+        <p className="mt-1 text-sm text-slate-600">{t('settingsSubtitle')}</p>
       </div>
 
       <div className="rounded-lg border border-slate-200 bg-white p-4">
-        <h3 className="text-sm font-semibold text-slate-950">General</h3>
+        <h3 className="text-sm font-semibold text-slate-950">{t('general')}</h3>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <label className="space-y-1 text-sm font-medium text-slate-700">
-            <span>Default work hours per day</span>
+            <span>{t('defaultWorkHoursPerDay')}</span>
             <input
               type="number"
               min="1"
@@ -187,7 +218,7 @@ export function SettingsPage({
             />
           </label>
           <label className="space-y-1 text-sm font-medium text-slate-700">
-            <span>Week start</span>
+            <span>{t('weekStart')}</span>
             <select
               className="h-10 w-full rounded-md border border-slate-300 px-3 text-sm outline-none focus:border-slate-500"
               value={settings.weekStart}
@@ -197,8 +228,38 @@ export function SettingsPage({
                 })
               }
             >
-              <option value="monday">Monday</option>
-              <option value="sunday">Sunday</option>
+              <option value="monday">{t('monday')}</option>
+              <option value="sunday">{t('sunday')}</option>
+            </select>
+          </label>
+          <label className="space-y-1 text-sm font-medium text-slate-700">
+            <span>{t('language')}</span>
+            <select
+              className="h-10 w-full rounded-md border border-slate-300 px-3 text-sm outline-none focus:border-slate-500"
+              value={settings.language}
+              onChange={(event) =>
+                updateGeneralSettings({
+                  language: event.target.value as AppLanguage,
+                })
+              }
+            >
+              <option value="en">{t('english')}</option>
+              <option value="vi">{t('vietnamese')}</option>
+            </select>
+          </label>
+          <label className="space-y-1 text-sm font-medium text-slate-700">
+            <span>{t('theme')}</span>
+            <select
+              className="h-10 w-full rounded-md border border-slate-300 px-3 text-sm outline-none focus:border-slate-500"
+              value={settings.theme}
+              onChange={(event) =>
+                updateGeneralSettings({
+                  theme: event.target.value as AppTheme,
+                })
+              }
+            >
+              <option value="light">{t('light')}</option>
+              <option value="dark">{t('dark')}</option>
             </select>
           </label>
         </div>
@@ -207,10 +268,8 @@ export function SettingsPage({
       <div className="rounded-lg border border-slate-200 bg-white p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h3 className="text-sm font-semibold text-slate-950">AI Provider</h3>
-            <p className="mt-1 text-sm text-slate-500">
-              API keys are stored locally in this browser.
-            </p>
+            <h3 className="text-sm font-semibold text-slate-950">{t('aiProvider')}</h3>
+            <p className="mt-1 text-sm text-slate-500">{t('apiKeyLocalNote')}</p>
           </div>
           <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
             <input
@@ -224,13 +283,13 @@ export function SettingsPage({
                 })
               }
             />
-            Enabled
+            {t('enabled')}
           </label>
         </div>
 
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <label className="space-y-1 text-sm font-medium text-slate-700">
-            <span>Provider</span>
+            <span>{t('provider')}</span>
             <select
               className="h-10 w-full rounded-md border border-slate-300 px-3 text-sm outline-none focus:border-slate-500"
               value={settings.ai.provider}
@@ -244,7 +303,7 @@ export function SettingsPage({
             </select>
           </label>
           <label className="space-y-1 text-sm font-medium text-slate-700">
-            <span>API key</span>
+            <span>{t('apiKey')}</span>
             <input
               type="password"
               className="h-10 w-full rounded-md border border-slate-300 px-3 text-sm outline-none focus:border-slate-500"
@@ -254,7 +313,7 @@ export function SettingsPage({
             />
           </label>
           <label className="space-y-1 text-sm font-medium text-slate-700">
-            <span>Base URL</span>
+            <span>{t('baseUrl')}</span>
             <input
               className="h-10 w-full rounded-md border border-slate-300 px-3 text-sm outline-none focus:border-slate-500"
               value={settings.ai.baseUrl}
@@ -263,7 +322,7 @@ export function SettingsPage({
             />
           </label>
           <label className="space-y-1 text-sm font-medium text-slate-700">
-            <span>Model</span>
+            <span>{t('model')}</span>
             <input
               className="h-10 w-full rounded-md border border-slate-300 px-3 text-sm outline-none focus:border-slate-500"
               value={settings.ai.model}
@@ -272,7 +331,9 @@ export function SettingsPage({
             />
           </label>
           <label className="space-y-1 text-sm font-medium text-slate-700 sm:col-span-2">
-            <span>Temperature: {settings.ai.temperature}</span>
+            <span>
+              {t('temperature')}: {settings.ai.temperature}
+            </span>
             <input
               type="range"
               min="0"
@@ -288,10 +349,8 @@ export function SettingsPage({
 
       <div className="rounded-lg border border-slate-200 bg-white p-4">
         <div>
-          <h3 className="text-sm font-semibold text-slate-950">Backup And Restore</h3>
-          <p className="mt-1 text-sm text-slate-500">
-            Export a JSON backup, restore from a backup file, or reset this browser data.
-          </p>
+          <h3 className="text-sm font-semibold text-slate-950">{t('backupAndRestore')}</h3>
+          <p className="mt-1 text-sm text-slate-500">{t('backupSubtitle')}</p>
         </div>
         <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           <button
@@ -300,7 +359,7 @@ export function SettingsPage({
             onClick={exportJson}
           >
             <Download className="h-4 w-4" aria-hidden="true" />
-            Export JSON
+            {t('exportJson')}
           </button>
           <button
             type="button"
@@ -308,7 +367,7 @@ export function SettingsPage({
             onClick={requestImportJson}
           >
             <Upload className="h-4 w-4" aria-hidden="true" />
-            Import JSON
+            {t('importJson')}
           </button>
           <button
             type="button"
@@ -316,7 +375,7 @@ export function SettingsPage({
             onClick={resetData}
           >
             <RotateCcw className="h-4 w-4" aria-hidden="true" />
-            Reset Data
+            {t('resetData')}
           </button>
           <input
             ref={importInputRef}
@@ -328,6 +387,24 @@ export function SettingsPage({
         </div>
         {backupMessage ? <p className="mt-3 text-sm text-slate-600">{backupMessage}</p> : null}
       </div>
+      {pendingConfirmation ? (
+        <ConfirmDialog
+          cancelLabel={t('cancel')}
+          closeLabel={t('closeModal')}
+          confirmLabel={t('confirm')}
+          destructive
+          message={
+            pendingConfirmation.kind === 'import'
+              ? t('importConfirmMessage')
+              : t('resetConfirmMessage')
+          }
+          title={
+            pendingConfirmation.kind === 'import' ? t('importConfirmTitle') : t('resetConfirmTitle')
+          }
+          onCancel={cancelConfirmation}
+          onConfirm={confirmPendingAction}
+        />
+      ) : null}
     </section>
   );
 }

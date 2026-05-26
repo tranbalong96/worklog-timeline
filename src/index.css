@@ -11,6 +11,11 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+:root.dark {
+  color: #e5e7eb;
+  background: #0f172a;
+}
+
 body {
   margin: 0;
   min-width: 320px;
@@ -19,4 +24,82 @@ body {
 
 button {
   font: inherit;
+}
+
+.dark body {
+  background: #0f172a;
+}
+
+.dark .bg-slate-50 {
+  background-color: #0f172a;
+}
+
+.dark .bg-white,
+.dark .bg-slate-100 {
+  background-color: #111827;
+}
+
+.dark .bg-slate-950 {
+  background-color: #f8fafc;
+}
+
+.dark .bg-red-50 {
+  background-color: #450a0a;
+}
+
+.dark .bg-amber-50 {
+  background-color: #451a03;
+}
+
+.dark .bg-emerald-50 {
+  background-color: #052e1b;
+}
+
+.dark .text-slate-950,
+.dark .text-slate-900,
+.dark .text-slate-800,
+.dark .text-slate-700 {
+  color: #e5e7eb;
+}
+
+.dark .text-slate-600,
+.dark .text-slate-500 {
+  color: #94a3b8;
+}
+
+.dark .text-white {
+  color: #0f172a;
+}
+
+.dark .text-red-700 {
+  color: #fca5a5;
+}
+
+.dark .text-amber-900 {
+  color: #fcd34d;
+}
+
+.dark .text-emerald-700 {
+  color: #86efac;
+}
+
+.dark .border-slate-200,
+.dark .border-slate-100,
+.dark .border-slate-300,
+.dark .ring-slate-200 {
+  border-color: #334155;
+  --tw-ring-color: #334155;
+}
+
+.dark input,
+.dark textarea,
+.dark select {
+  background-color: #0f172a;
+  color: #e5e7eb;
+  border-color: #334155;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #64748b;
 }

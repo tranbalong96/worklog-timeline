@@ -2,30 +2,31 @@ import { FileText } from 'lucide-react';
 import { useState } from 'react';
 import { DailyReportModal } from '../components/DailyReportModal';
 import { formatDateKey } from '../helpers/dateHelper';
-import type { Task, WorklogEntry } from '../types/worklog';
+import { translate } from '../helpers/i18n';
+import type { AppLanguage, Task, WorklogEntry } from '../types/worklog';
 
 type DailyReportPageProps = {
+  language: AppLanguage;
   tasks: Task[];
   worklogs: WorklogEntry[];
 };
 
-export function DailyReportPage({ tasks, worklogs }: DailyReportPageProps) {
+export function DailyReportPage({ language, tasks, worklogs }: DailyReportPageProps) {
+  const t = (key: Parameters<typeof translate>[1]) => translate(language, key);
   const [reportDate, setReportDate] = useState(() => formatDateKey(new Date()));
   const [isBuilderOpen, setIsBuilderOpen] = useState(false);
 
   return (
     <section className="space-y-5">
       <div>
-        <h2 className="text-xl font-semibold text-slate-950">Daily Report</h2>
-        <p className="mt-1 text-sm text-slate-600">
-          Build a copy-ready report from existing worklogs and report-only custom tasks.
-        </p>
+        <h2 className="text-xl font-semibold text-slate-950">{t('dailyReport')}</h2>
+        <p className="mt-1 text-sm text-slate-600">{t('dailyReportSubtitle')}</p>
       </div>
 
       <div className="rounded-lg border border-slate-200 bg-white p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
           <label className="space-y-1 text-sm font-medium text-slate-700">
-            <span>Report date</span>
+            <span>{t('reportDate')}</span>
             <input
               type="date"
               className="h-10 w-full rounded-md border border-slate-300 px-3 text-sm outline-none focus:border-slate-500 sm:w-48"
@@ -39,13 +40,14 @@ export function DailyReportPage({ tasks, worklogs }: DailyReportPageProps) {
             onClick={() => setIsBuilderOpen(true)}
           >
             <FileText className="h-4 w-4" aria-hidden="true" />
-            Build report
+            {t('buildReport')}
           </button>
         </div>
       </div>
 
       {isBuilderOpen ? (
         <DailyReportModal
+          language={language}
           reportDate={reportDate}
           tasks={tasks}
           worklogs={worklogs}

@@ -1,17 +1,20 @@
 import { useState, type FormEvent } from 'react';
 import { Modal } from './Modal';
-import type { Task, TaskFormData, TaskStatus, TaskType } from '../types/worklog';
+import { translate } from '../helpers/i18n';
+import type { AppLanguage, Task, TaskFormData, TaskStatus, TaskType } from '../types/worklog';
 
 const taskTypes: TaskType[] = ['feature', 'bug', 'chore', 'research', 'meeting'];
 const taskStatuses: TaskStatus[] = ['todo', 'in-progress', 'done'];
 
 type TaskFormModalProps = {
+  language: AppLanguage;
   task?: Task;
   onClose: () => void;
   onSave: (taskData: TaskFormData) => void;
 };
 
-export function TaskFormModal({ task, onClose, onSave }: TaskFormModalProps) {
+export function TaskFormModal({ language, task, onClose, onSave }: TaskFormModalProps) {
+  const t = (key: Parameters<typeof translate>[1]) => translate(language, key);
   const [formData, setFormData] = useState<TaskFormData>({
     code: task?.code ?? '',
     title: task?.title ?? '',
@@ -38,11 +41,11 @@ export function TaskFormModal({ task, onClose, onSave }: TaskFormModalProps) {
   }
 
   return (
-    <Modal title={task ? 'Edit Task' : 'Add Task'} onClose={onClose}>
+    <Modal title={task ? t('editTask') : t('addTaskTitle')} closeLabel={t('closeModal')} onClose={onClose}>
       <form className="space-y-4 px-5 py-5" onSubmit={handleSubmit}>
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="space-y-1 text-sm font-medium text-slate-700">
-            <span>Task code</span>
+            <span>{t('taskCode')}</span>
             <input
               className="h-10 w-full rounded-md border border-slate-300 px-3 text-sm outline-none focus:border-slate-500"
               value={formData.code}
@@ -51,7 +54,7 @@ export function TaskFormModal({ task, onClose, onSave }: TaskFormModalProps) {
             />
           </label>
           <label className="space-y-1 text-sm font-medium text-slate-700">
-            <span>Status</span>
+            <span>{t('status')}</span>
             <select
               className="h-10 w-full rounded-md border border-slate-300 px-3 text-sm outline-none focus:border-slate-500"
               value={formData.status}
@@ -66,7 +69,7 @@ export function TaskFormModal({ task, onClose, onSave }: TaskFormModalProps) {
           </label>
         </div>
         <label className="block space-y-1 text-sm font-medium text-slate-700">
-          <span>Title</span>
+          <span>{t('title')}</span>
           <input
             className="h-10 w-full rounded-md border border-slate-300 px-3 text-sm outline-none focus:border-slate-500"
             value={formData.title}
@@ -75,7 +78,7 @@ export function TaskFormModal({ task, onClose, onSave }: TaskFormModalProps) {
           />
         </label>
         <label className="block space-y-1 text-sm font-medium text-slate-700">
-          <span>Description</span>
+          <span>{t('description')}</span>
           <textarea
             className="min-h-24 w-full resize-y rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
             value={formData.description}
@@ -83,7 +86,7 @@ export function TaskFormModal({ task, onClose, onSave }: TaskFormModalProps) {
           />
         </label>
         <label className="block space-y-1 text-sm font-medium text-slate-700">
-          <span>Type</span>
+          <span>{t('type')}</span>
           <select
             className="h-10 w-full rounded-md border border-slate-300 px-3 text-sm outline-none focus:border-slate-500"
             value={formData.type}
@@ -102,13 +105,13 @@ export function TaskFormModal({ task, onClose, onSave }: TaskFormModalProps) {
             className="inline-flex min-h-10 items-center rounded-md px-4 text-sm font-medium text-slate-700 ring-1 ring-inset ring-slate-200 hover:bg-slate-100"
             onClick={onClose}
           >
-            Cancel
+            {t('cancel')}
           </button>
           <button
             type="submit"
             className="inline-flex min-h-10 items-center rounded-md bg-slate-950 px-4 text-sm font-medium text-white hover:bg-slate-800"
           >
-            Save task
+            {t('saveTask')}
           </button>
         </div>
       </form>

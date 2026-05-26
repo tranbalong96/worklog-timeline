@@ -6,6 +6,10 @@ export type WeekStart = 'monday' | 'sunday';
 
 export type AIProvider = 'disabled' | 'gemini' | 'openai-compatible' | 'ollama' | 'lm-studio';
 
+export type AppLanguage = 'en' | 'vi';
+
+export type AppTheme = 'light' | 'dark';
+
 export type Task = {
   id: string;
   code: string;
@@ -47,6 +51,8 @@ export type AISettings = {
 export type Settings = {
   defaultWorkHoursPerDay: number;
   weekStart: WeekStart;
+  language: AppLanguage;
+  theme: AppTheme;
   ai: AISettings;
 };
 

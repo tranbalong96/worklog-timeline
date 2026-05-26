@@ -7,9 +7,11 @@ import {
   getLoggedItemsForDate,
   type ReportWorklogItem,
 } from '../helpers/reportHelper';
-import type { Task, WorklogEntry } from '../types/worklog';
+import { translate } from '../helpers/i18n';
+import type { AppLanguage, Task, WorklogEntry } from '../types/worklog';
 
 type DailyReportModalProps = {
+  language: AppLanguage;
   reportDate: string;
   tasks: Task[];
   worklogs: WorklogEntry[];
@@ -20,7 +22,14 @@ function getInitialSelection(items: ReportWorklogItem[]): Record<string, boolean
   return Object.fromEntries(items.map((item) => [item.id, true]));
 }
 
-export function DailyReportModal({ reportDate, tasks, worklogs, onClose }: DailyReportModalProps) {
+export function DailyReportModal({
+  language,
+  reportDate,
+  tasks,
+  worklogs,
+  onClose,
+}: DailyReportModalProps) {
+  const t = (key: Parameters<typeof translate>[1]) => translate(language, key);
   const previousDate = useMemo(
     () => findPreviousLoggedDate(worklogs, reportDate),
     [reportDate, worklogs],
@@ -98,9 +107,9 @@ export function DailyReportModal({ reportDate, tasks, worklogs, onClose }: Daily
   async function copyPreview() {
     try {
       await navigator.clipboard.writeText(previewText);
-      setCopyStatus('Copied');
+      setCopyStatus(t('copied'));
     } catch {
-      setCopyStatus('Copy failed');
+      setCopyStatus(t('copyFailed'));
     }
   }
 
@@ -128,48 +137,56 @@ export function DailyReportModal({ reportDate, tasks, worklogs, onClose }: Daily
   }
 
   return (
-    <Modal title="Daily Report Builder" maxWidthClassName="max-w-4xl" onClose={onClose}>
+    <Modal
+      title={t('dailyReportBuilder')}
+      closeLabel={t('closeModal')}
+      maxWidthClassName="max-w-4xl"
+      onClose={onClose}
+    >
       <div className="grid gap-5 px-5 py-5 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
         <div className="space-y-5">
           <section className="space-y-2">
             <h3 className="text-sm font-semibold text-slate-950">
-              Previous workday{previousDate ? ` (${previousDate})` : ''}
+              {t('previousWorkday')}
+              {previousDate ? ` (${previousDate})` : ''}
             </h3>
             {previousItems.length > 0 ? (
               <div className="space-y-2">{previousItems.map(renderWorklogItem)}</div>
             ) : (
               <p className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500">
-                No logged work found in the last 7 days.
+                {t('noLoggedWorkLast7Days')}
               </p>
             )}
           </section>
 
           <section className="space-y-2">
-            <h3 className="text-sm font-semibold text-slate-950">Today ({reportDate})</h3>
+            <h3 className="text-sm font-semibold text-slate-950">
+              {t('today')} ({reportDate})
+            </h3>
             {todayItems.length > 0 ? (
               <div className="space-y-2">{todayItems.map(renderWorklogItem)}</div>
             ) : (
               <p className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500">
-                No logged work for selected date.
+                {t('noLoggedWorkSelectedDate')}
               </p>
             )}
           </section>
 
           <section className="space-y-2">
-            <h3 className="text-sm font-semibold text-slate-950">Custom tasks</h3>
+            <h3 className="text-sm font-semibold text-slate-950">{t('customTasks')}</h3>
             <div className="flex gap-2">
               <input
                 className="h-10 min-w-0 flex-1 rounded-md border border-slate-300 px-3 text-sm outline-none focus:border-slate-500"
                 value={customTaskInput}
                 onChange={(event) => setCustomTaskInput(event.target.value)}
-                placeholder="Add a report-only task"
+                placeholder={t('addReportOnlyTask')}
               />
               <button
                 type="button"
                 className="inline-flex h-10 w-10 items-center justify-center rounded-md bg-slate-950 text-white hover:bg-slate-800"
                 onClick={addCustomTask}
-                aria-label="Add custom task"
-                title="Add custom task"
+                aria-label={t('addCustomTask')}
+                title={t('addCustomTask')}
               >
                 <Plus className="h-4 w-4" aria-hidden="true" />
               </button>
@@ -186,8 +203,8 @@ export function DailyReportModal({ reportDate, tasks, worklogs, onClose }: Daily
                       type="button"
                       className="inline-flex h-8 w-8 items-center justify-center rounded-md text-red-700 hover:bg-red-50"
                       onClick={() => removeCustomTask(index)}
-                      aria-label="Remove custom task"
-                      title="Remove custom task"
+                      aria-label={t('removeCustomTask')}
+                      title={t('removeCustomTask')}
                     >
                       <Trash2 className="h-4 w-4" aria-hidden="true" />
                     </button>
@@ -200,7 +217,7 @@ export function DailyReportModal({ reportDate, tasks, worklogs, onClose }: Daily
 
         <section className="space-y-3">
           <div className="flex items-center justify-between gap-3">
-            <h3 className="text-sm font-semibold text-slate-950">Preview</h3>
+            <h3 className="text-sm font-semibold text-slate-950">{t('preview')}</h3>
             <div className="flex items-center gap-2">
               {copyStatus ? <span className="text-xs text-slate-500">{copyStatus}</span> : null}
               <button
@@ -209,7 +226,7 @@ export function DailyReportModal({ reportDate, tasks, worklogs, onClose }: Daily
                 onClick={copyPreview}
               >
                 <Clipboard className="h-4 w-4" aria-hidden="true" />
-                Copy
+                {t('copy')}
               </button>
             </div>
           </div>

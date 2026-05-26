@@ -1,5 +1,14 @@
 import { defaultAppData } from '../data/defaultAppData';
-import type { AIProvider, AppData, TaskStatus, TaskType, WeekStart } from '../types/worklog';
+import type {
+  AIProvider,
+  AppData,
+  AppLanguage,
+  AppTheme,
+  Settings,
+  TaskStatus,
+  TaskType,
+  WeekStart,
+} from '../types/worklog';
 
 export const STORAGE_KEY = 'worklog_timeline_data_v1';
 
@@ -16,6 +25,8 @@ export type ImportAppDataResult =
 const taskTypes: TaskType[] = ['feature', 'bug', 'chore', 'research', 'meeting'];
 const taskStatuses: TaskStatus[] = ['todo', 'in-progress', 'done'];
 const weekStarts: WeekStart[] = ['monday', 'sunday'];
+const appLanguages: AppLanguage[] = ['en', 'vi'];
+const appThemes: AppTheme[] = ['light', 'dark'];
 const aiProviders: AIProvider[] = [
   'disabled',
   'gemini',
@@ -95,6 +106,43 @@ function isSettings(value: unknown): boolean {
   return (
     isNumber(value.defaultWorkHoursPerDay) &&
     weekStarts.includes(value.weekStart as WeekStart) &&
+    appLanguages.includes(value.language as AppLanguage) &&
+    appThemes.includes(value.theme as AppTheme) &&
+    typeof value.ai.enabled === 'boolean' &&
+    aiProviders.includes(value.ai.provider as AIProvider) &&
+    isString(value.ai.apiKey) &&
+    isString(value.ai.baseUrl) &&
+    isString(value.ai.model) &&
+    isNumber(value.ai.temperature)
+  );
+}
+
+function normalizeSettings(settings: Settings): Settings {
+  return {
+    ...defaultAppData.settings,
+    ...settings,
+    ai: {
+      ...defaultAppData.settings.ai,
+      ...settings.ai,
+    },
+  };
+}
+
+function normalizeAppData(appData: AppData): AppData {
+  return {
+    ...appData,
+    settings: normalizeSettings(appData.settings),
+  };
+}
+
+function isLegacySettings(value: unknown): value is Settings {
+  if (!isRecord(value) || !isRecord(value.ai)) {
+    return false;
+  }
+
+  return (
+    isNumber(value.defaultWorkHoursPerDay) &&
+    weekStarts.includes(value.weekStart as WeekStart) &&
     typeof value.ai.enabled === 'boolean' &&
     aiProviders.includes(value.ai.provider as AIProvider) &&
     isString(value.ai.apiKey) &&
@@ -140,7 +188,21 @@ export function loadAppData(): AppData {
     const parsedData: unknown = JSON.parse(storedValue);
 
     if (isAppData(parsedData)) {
-      return parsedData;
+      return normalizeAppData(parsedData);
+    }
+
+    if (
+      isRecord(parsedData) &&
+      parsedData.version === 1 &&
+      isLegacySettings(parsedData.settings) &&
+      Array.isArray(parsedData.tasks) &&
+      parsedData.tasks.every(isTask) &&
+      Array.isArray(parsedData.worklogs) &&
+      parsedData.worklogs.every(isWorklogEntry) &&
+      Array.isArray(parsedData.dailyReports) &&
+      parsedData.dailyReports.every(isDailyReport)
+    ) {
+      return normalizeAppData(parsedData as AppData);
     }
   } catch {
     return cloneDefaultData();
@@ -170,6 +232,23 @@ export function importAppDataFromJson(json: string): ImportAppDataResult {
     const parsedData: unknown = JSON.parse(json);
 
     if (!isAppData(parsedData)) {
+      if (
+        isRecord(parsedData) &&
+        parsedData.version === 1 &&
+        isLegacySettings(parsedData.settings) &&
+        Array.isArray(parsedData.tasks) &&
+        parsedData.tasks.every(isTask) &&
+        Array.isArray(parsedData.worklogs) &&
+        parsedData.worklogs.every(isWorklogEntry) &&
+        Array.isArray(parsedData.dailyReports) &&
+        parsedData.dailyReports.every(isDailyReport)
+      ) {
+        return {
+          ok: true,
+          data: normalizeAppData(parsedData as AppData),
+        };
+      }
+
       return {
         ok: false,
         error: 'Imported JSON does not match the Worklog Timeline backup format.',
