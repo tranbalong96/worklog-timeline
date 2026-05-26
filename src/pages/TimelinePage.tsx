@@ -6,11 +6,17 @@ import { WorklogModal } from '../components/WorklogModal';
 import { translate } from '../helpers/i18n';
 import {
   addDays,
+  addMonths,
   formatDateKey,
   formatDayLabel,
+  formatMonthLabel,
   formatShortDate,
   formatWeekRange,
+  getMonthDays,
+  getRollingSevenDays,
   getWeekDays,
+  isSameDate,
+  isWeekend,
 } from '../helpers/dateHelper';
 import {
   formatHours,
@@ -44,6 +50,8 @@ type WorklogModalState = {
   task: Task;
 };
 
+type TimelineViewMode = 'week' | 'rolling7' | 'month';
+
 export function TimelinePage({
   language,
   tasks,
@@ -56,22 +64,64 @@ export function TimelinePage({
 }: TimelinePageProps) {
   const t = (key: Parameters<typeof translate>[1]) => translate(language, key);
   const [selectedDate, setSelectedDate] = useState(() => new Date());
+  const [viewMode, setViewMode] = useState<TimelineViewMode>('week');
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>();
   const [deletingTask, setDeletingTask] = useState<Task | undefined>();
   const [loggingWorklog, setLoggingWorklog] = useState<WorklogModalState | undefined>();
-  const weekDays = useMemo(() => getWeekDays(selectedDate, weekStart), [selectedDate, weekStart]);
-  const weeklyTotal = getWeekTotal(worklogs, tasks, weekDays);
+  const visibleDays = useMemo(() => {
+    if (viewMode === 'month') {
+      return getMonthDays(selectedDate);
+    }
 
-  function goToPreviousWeek() {
-    setSelectedDate((currentDate) => addDays(currentDate, -7));
+    if (viewMode === 'rolling7') {
+      return getRollingSevenDays(selectedDate);
+    }
+
+    return getWeekDays(selectedDate, weekStart);
+  }, [selectedDate, viewMode, weekStart]);
+  const periodTotal = getWeekTotal(worklogs, tasks, visibleDays);
+  const gridTemplateColumns = `minmax(260px,1.6fr) repeat(${visibleDays.length}, minmax(88px,1fr)) minmax(96px,0.8fr)`;
+  const periodLabel =
+    viewMode === 'month' ? formatMonthLabel(selectedDate) : formatWeekRange(visibleDays);
+  const currentPeriodLabel = viewMode === 'week' ? t('thisWeek') : t('currentPeriod');
+  const today = useMemo(() => new Date(), []);
+
+  function getDayCellClass(day: Date, section: 'header' | 'body' | 'total'): string {
+    if (isSameDate(day, today)) {
+      return section === 'body'
+        ? 'bg-sky-100 text-sky-950 ring-1 ring-inset ring-sky-300'
+        : 'bg-sky-200 text-sky-950';
+    }
+
+    if (isWeekend(day)) {
+      return section === 'body' ? 'bg-amber-50/70 text-amber-900' : 'bg-amber-50 text-amber-900';
+    }
+
+    return '';
   }
 
-  function goToNextWeek() {
-    setSelectedDate((currentDate) => addDays(currentDate, 7));
+  function goToPreviousPeriod() {
+    setSelectedDate((currentDate) => {
+      if (viewMode === 'month') {
+        return addMonths(currentDate, -1);
+      }
+
+      return addDays(currentDate, -7);
+    });
   }
 
-  function goToCurrentWeek() {
+  function goToNextPeriod() {
+    setSelectedDate((currentDate) => {
+      if (viewMode === 'month') {
+        return addMonths(currentDate, 1);
+      }
+
+      return addDays(currentDate, 7);
+    });
+  }
+
+  function goToCurrentPeriod() {
     setSelectedDate(new Date());
   }
 
@@ -109,33 +159,46 @@ export function TimelinePage({
         <div>
           <h2 className="text-xl font-semibold text-slate-950">{t('timeline')}</h2>
           <p className="mt-1 text-sm text-slate-600">
-            {formatWeekRange(weekDays)} · {tasks.length} tasks · {formatHours(weeklyTotal)} total
+            {periodLabel} · {tasks.length} tasks · {formatHours(periodTotal)} total
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <label className="sr-only" htmlFor="timeline-view-mode">
+            {t('viewMode')}
+          </label>
+          <select
+            id="timeline-view-mode"
+            className="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 outline-none focus:border-slate-500"
+            value={viewMode}
+            onChange={(event) => setViewMode(event.target.value as TimelineViewMode)}
+          >
+            <option value="week">{t('weekView')}</option>
+            <option value="rolling7">{t('sevenDayView')}</option>
+            <option value="month">{t('monthView')}</option>
+          </select>
           <button
             type="button"
             className="inline-flex h-10 w-10 items-center justify-center rounded-md bg-white text-slate-700 ring-1 ring-inset ring-slate-200 hover:bg-slate-100"
-            onClick={goToPreviousWeek}
-            aria-label={t('previousWeek')}
-            title={t('previousWeek')}
+            onClick={goToPreviousPeriod}
+            aria-label={viewMode === 'week' ? t('previousWeek') : t('previousPeriod')}
+            title={viewMode === 'week' ? t('previousWeek') : t('previousPeriod')}
           >
             <ChevronLeft className="h-4 w-4" aria-hidden="true" />
           </button>
           <button
             type="button"
             className="inline-flex min-h-10 items-center gap-2 rounded-md bg-white px-3 text-sm font-medium text-slate-700 ring-1 ring-inset ring-slate-200 hover:bg-slate-100"
-            onClick={goToCurrentWeek}
+            onClick={goToCurrentPeriod}
           >
             <CalendarDays className="h-4 w-4" aria-hidden="true" />
-            {t('thisWeek')}
+            {currentPeriodLabel}
           </button>
           <button
             type="button"
             className="inline-flex h-10 w-10 items-center justify-center rounded-md bg-white text-slate-700 ring-1 ring-inset ring-slate-200 hover:bg-slate-100"
-            onClick={goToNextWeek}
-            aria-label={t('nextWeek')}
-            title={t('nextWeek')}
+            onClick={goToNextPeriod}
+            aria-label={viewMode === 'week' ? t('nextWeek') : t('nextPeriod')}
+            title={viewMode === 'week' ? t('nextWeek') : t('nextPeriod')}
           >
             <ChevronRight className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -150,11 +213,17 @@ export function TimelinePage({
         </div>
       </div>
       <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
-        <div className="min-w-[960px]">
-          <div className="grid grid-cols-[minmax(260px,1.6fr)_repeat(7,minmax(88px,1fr))_minmax(96px,0.8fr)] border-b border-slate-200 bg-slate-100 text-sm font-medium text-slate-600">
+        <div style={{ minWidth: `${360 + visibleDays.length * 88}px` }}>
+          <div
+            className="grid border-b border-slate-200 bg-slate-100 text-sm font-medium text-slate-600"
+            style={{ gridTemplateColumns }}
+          >
             <div className="px-4 py-3">{t('task')}</div>
-            {weekDays.map((day) => (
-              <div key={formatDateKey(day)} className="px-3 py-3 text-right">
+            {visibleDays.map((day) => (
+              <div
+                key={formatDateKey(day)}
+                className={`px-3 py-3 text-right ${getDayCellClass(day, 'header')}`}
+              >
                 <div>{formatDayLabel(day)}</div>
                 <div className="mt-0.5 text-xs font-normal text-slate-500">{formatShortDate(day)}</div>
               </div>
@@ -166,12 +235,13 @@ export function TimelinePage({
             <div className="px-4 py-8 text-sm text-slate-500">{t('noTasksYet')}</div>
           ) : (
             tasks.map((task) => {
-              const taskTotal = getTaskWeeklyTotal(worklogs, task.id, weekDays);
+              const taskTotal = getTaskWeeklyTotal(worklogs, task.id, visibleDays);
 
               return (
                 <div
                   key={task.id}
-                  className="grid grid-cols-[minmax(260px,1.6fr)_repeat(7,minmax(88px,1fr))_minmax(96px,0.8fr)] border-b border-slate-100 text-sm last:border-b-0"
+                  className="grid border-b border-slate-100 text-sm last:border-b-0"
+                  style={{ gridTemplateColumns }}
                 >
                   <div className="px-4 py-4">
                     <div className="flex flex-wrap items-center gap-2">
@@ -201,7 +271,7 @@ export function TimelinePage({
                       </button>
                     </div>
                   </div>
-                  {weekDays.map((day) => {
+                  {visibleDays.map((day) => {
                     const hours = getHoursForTaskOnDate(worklogs, task.id, day);
                     const dateKey = formatDateKey(day);
 
@@ -209,7 +279,10 @@ export function TimelinePage({
                       <button
                         key={`${task.id}-${dateKey}`}
                         type="button"
-                        className="flex items-center justify-end px-3 py-4 text-right text-slate-700 hover:bg-slate-50"
+                        className={`flex items-center justify-end px-3 py-4 text-right text-slate-700 hover:bg-slate-50 ${getDayCellClass(
+                          day,
+                          'body',
+                        )}`}
                         onClick={() => setLoggingWorklog({ task, date: dateKey })}
                         aria-label={`${t('logHours')} ${task.code} ${dateKey}`}
                         title={t('logHours')}
@@ -226,14 +299,20 @@ export function TimelinePage({
             })
           )}
 
-          <div className="grid grid-cols-[minmax(260px,1.6fr)_repeat(7,minmax(88px,1fr))_minmax(96px,0.8fr)] border-t border-slate-200 bg-slate-50 text-sm font-semibold text-slate-950">
+          <div
+            className="grid border-t border-slate-200 bg-slate-50 text-sm font-semibold text-slate-950"
+            style={{ gridTemplateColumns }}
+          >
             <div className="px-4 py-4">{t('dailyTotal')}</div>
-            {weekDays.map((day) => (
-              <div key={formatDateKey(day)} className="px-3 py-4 text-right">
+            {visibleDays.map((day) => (
+              <div
+                key={formatDateKey(day)}
+                className={`px-3 py-4 text-right ${getDayCellClass(day, 'total')}`}
+              >
                 {formatHours(getDayTotal(worklogs, tasks, day))}
               </div>
             ))}
-            <div className="px-4 py-4 text-right">{formatHours(weeklyTotal)}</div>
+            <div className="px-4 py-4 text-right">{formatHours(periodTotal)}</div>
           </div>
         </div>
       </div>

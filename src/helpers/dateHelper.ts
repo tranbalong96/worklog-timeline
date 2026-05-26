@@ -39,6 +39,33 @@ export function getWeekDays(date: Date, weekStart: WeekStart): Date[] {
   return Array.from({ length: 7 }, (_, index) => addDays(weekStartDate, index));
 }
 
+export function getRollingSevenDays(date: Date): Date[] {
+  return Array.from({ length: 7 }, (_, index) => addDays(date, index - 6));
+}
+
+export function getMonthDays(date: Date): Date[] {
+  const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
+  const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+  const totalDays = lastDay.getDate();
+
+  return Array.from({ length: totalDays }, (_, index) => addDays(firstDay, index));
+}
+
+export function addMonths(date: Date, months: number): Date {
+  const nextDate = new Date(date);
+  nextDate.setMonth(nextDate.getMonth() + months);
+
+  return nextDate;
+}
+
+export function isWeekend(date: Date): boolean {
+  return date.getDay() === 0 || date.getDay() === 6;
+}
+
+export function isSameDate(firstDate: Date, secondDate: Date): boolean {
+  return formatDateKey(firstDate) === formatDateKey(secondDate);
+}
+
 export function formatDayLabel(date: Date): string {
   return dayLabels[date.getDay()];
 }
@@ -55,4 +82,11 @@ export function formatWeekRange(weekDays: Date[]): string {
   const lastDay = weekDays[weekDays.length - 1];
 
   return `${formatShortDate(firstDay)} - ${formatShortDate(lastDay)}`;
+}
+
+export function formatMonthLabel(date: Date): string {
+  return date.toLocaleDateString(undefined, {
+    month: 'long',
+    year: 'numeric',
+  });
 }
