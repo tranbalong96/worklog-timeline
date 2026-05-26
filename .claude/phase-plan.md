@@ -75,7 +75,7 @@ Goal:
 - Add generated task to Timeline.
 
 Status:
-- pending
+- completed
 
 ## Phase 7 - Backup And Restore
 

@@ -73,7 +73,14 @@ function App() {
       />
     ),
     'daily-report': <DailyReportPage tasks={appData.tasks} worklogs={appData.worklogs} />,
-    'ai-task-generator': <AITaskGeneratorPage />,
+    'ai-task-generator': (
+      <AITaskGeneratorPage
+        settings={appData.settings.ai}
+        onAddTask={(taskData: TaskFormData) =>
+          setAppData((currentData) => addTask(currentData, taskData))
+        }
+      />
+    ),
     settings: (
       <SettingsPage
         settings={appData.settings}

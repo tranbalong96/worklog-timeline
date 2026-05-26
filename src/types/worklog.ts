@@ -72,3 +72,10 @@ export type WorklogFormData = {
   hours: number;
   note: string;
 };
+
+export type GeneratedTask = {
+  taskCode: string;
+  taskTitle: string;
+  taskDescription: string;
+  taskType: TaskType;
+};
