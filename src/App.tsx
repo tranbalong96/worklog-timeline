@@ -39,7 +39,13 @@ function App() {
   }, [appData]);
 
   const pageContent = {
-    timeline: <TimelinePage tasks={appData.tasks} worklogs={appData.worklogs} />,
+    timeline: (
+      <TimelinePage
+        tasks={appData.tasks}
+        weekStart={appData.settings.weekStart}
+        worklogs={appData.worklogs}
+      />
+    ),
     'ai-task-generator': <AITaskGeneratorPage />,
     settings: <SettingsPage settings={appData.settings} />,
   }[activePage];

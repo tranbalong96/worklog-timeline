@@ -31,7 +31,7 @@ Goal:
 - Daily totals.
 
 Status:
-- pending
+- completed
 
 ## Phase 3 - Task And Worklog Editing
 
