@@ -11,6 +11,9 @@ import type {
 } from '../types/worklog';
 
 export const STORAGE_KEY = 'worklog_timeline_data_v1';
+const DB_NAME = 'worklog_timeline_data';
+const STORE_NAME = 'app_data';
+const APP_DATA_KEY = 'current';
 
 export type ImportAppDataResult =
   | {
@@ -173,7 +176,19 @@ function canUseLocalStorage(): boolean {
   return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
 }
 
-export function loadAppData(): AppData {
+function canUseIndexedDb(): boolean {
+  return typeof indexedDB !== 'undefined';
+}
+
+export async function loadAppData(): Promise<AppData> {
+  if (canUseIndexedDb()) {
+    const indexedDbData = await loadAppDataFromIndexedDb();
+
+    if (indexedDbData) {
+      return indexedDbData;
+    }
+  }
+
   if (!canUseLocalStorage()) {
     return cloneDefaultData();
   }
@@ -188,7 +203,11 @@ export function loadAppData(): AppData {
     const parsedData: unknown = JSON.parse(storedValue);
 
     if (isAppData(parsedData)) {
-      return normalizeAppData(parsedData);
+      const normalizedData = normalizeAppData(parsedData);
+
+      await migrateLocalStorageDataToIndexedDb(normalizedData);
+
+      return normalizedData;
     }
 
     if (
@@ -202,7 +221,11 @@ export function loadAppData(): AppData {
       Array.isArray(parsedData.dailyReports) &&
       parsedData.dailyReports.every(isDailyReport)
     ) {
-      return normalizeAppData(parsedData as AppData);
+      const normalizedData = normalizeAppData(parsedData as AppData);
+
+      await migrateLocalStorageDataToIndexedDb(normalizedData);
+
+      return normalizedData;
     }
   } catch {
     return cloneDefaultData();
@@ -211,12 +234,15 @@ export function loadAppData(): AppData {
   return cloneDefaultData();
 }
 
-export function saveAppData(appData: AppData): void {
-  if (!canUseLocalStorage()) {
+export async function saveAppData(appData: AppData): Promise<void> {
+  if (!canUseIndexedDb()) {
     return;
   }
 
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+  const database = await openDatabase();
+
+  await createStoreRequest(database, 'readwrite', (store) => store.put(appData, APP_DATA_KEY));
+  database.close();
 }
 
 export function createDefaultAppData(): AppData {
@@ -265,4 +291,54 @@ export function importAppDataFromJson(json: string): ImportAppDataResult {
       error: 'Imported file is not valid JSON.',
     };
   }
+}
+
+async function migrateLocalStorageDataToIndexedDb(appData: AppData): Promise<void> {
+  if (!canUseIndexedDb()) {
+    return;
+  }
+
+  await saveAppData(appData);
+  window.localStorage.removeItem(STORAGE_KEY);
+}
+
+async function loadAppDataFromIndexedDb(): Promise<AppData | undefined> {
+  const database = await openDatabase();
+  const storedData = await createStoreRequest(database, 'readonly', (store) =>
+    store.get(APP_DATA_KEY),
+  );
+
+  database.close();
+
+  if (isAppData(storedData)) {
+    return normalizeAppData(storedData);
+  }
+
+  return undefined;
+}
+
+async function openDatabase(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, 1);
+
+    request.onupgradeneeded = () => {
+      request.result.createObjectStore(STORE_NAME);
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+function createStoreRequest(
+  database: IDBDatabase,
+  mode: IDBTransactionMode,
+  run: (store: IDBObjectStore) => IDBRequest,
+): Promise<unknown> {
+  return new Promise((resolve, reject) => {
+    const transaction = database.transaction(STORE_NAME, mode);
+    const request = run(transaction.objectStore(STORE_NAME));
+
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
 }

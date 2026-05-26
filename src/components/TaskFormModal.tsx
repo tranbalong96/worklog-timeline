@@ -45,12 +45,11 @@ export function TaskFormModal({ language, task, onClose, onSave }: TaskFormModal
       <form className="space-y-4 px-5 py-5" onSubmit={handleSubmit}>
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="space-y-1 text-sm font-medium text-slate-700">
-            <span>{t('taskCode')}</span>
+            <span>{t('taskCodeOptional')}</span>
             <input
               className="h-10 w-full rounded-md border border-slate-300 px-3 text-sm outline-none focus:border-slate-500"
               value={formData.code}
               onChange={(event) => updateField('code', event.target.value)}
-              required
             />
           </label>
           <label className="space-y-1 text-sm font-medium text-slate-700">

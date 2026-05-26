@@ -31,7 +31,7 @@ export function WorklogModal({ date, language, task, worklog, onClose, onSave }:
     <Modal title={t('logHours')} closeLabel={t('closeModal')} onClose={onClose}>
       <form className="space-y-4 px-5 py-5" onSubmit={handleSubmit}>
         <div>
-          <p className="text-sm font-semibold text-slate-950">{task.code}</p>
+          {task.code ? <p className="text-sm font-semibold text-slate-950">{task.code}</p> : null}
           <p className="mt-1 text-sm text-slate-600">{task.title}</p>
           <p className="mt-1 text-xs text-slate-500">{date}</p>
         </div>

@@ -26,7 +26,7 @@ export function getLoggedItemsForDate(
       return {
         id: worklog.id,
         date: worklog.date,
-        taskCode: task?.code ?? 'Unknown',
+        taskCode: task?.code ?? '',
         taskTitle: task?.title ?? 'Deleted task',
         hours: worklog.hours,
         note: worklog.note,
@@ -57,7 +57,9 @@ export function findPreviousLoggedDate(
 function formatWorklogLine(item: ReportWorklogItem): string {
   const noteText = item.note ? ` - ${item.note}` : '';
 
-  return `- ${item.taskCode}: ${item.taskTitle} (${formatHours(item.hours)})${noteText}`;
+  const taskLabel = item.taskCode ? `${item.taskCode}: ${item.taskTitle}` : item.taskTitle;
+
+  return `- ${taskLabel} (${formatHours(item.hours)})${noteText}`;
 }
 
 function formatCustomLine(task: string): string {

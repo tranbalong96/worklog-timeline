@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { CalendarDays, FileText, Settings, Sparkles } from 'lucide-react';
 import { AppShell } from './components/AppShell';
 import {
@@ -12,7 +12,7 @@ import { AITaskGeneratorPage } from './pages/AITaskGeneratorPage';
 import { DailyReportPage } from './pages/DailyReportPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { TimelinePage } from './pages/TimelinePage';
-import { loadAppData, saveAppData } from './services/storageService';
+import { createDefaultAppData, loadAppData, saveAppData } from './services/storageService';
 import { translate } from './helpers/i18n';
 import type { Settings as AppSettings, TaskFormData, WorklogFormData } from './types/worklog';
 
@@ -20,7 +20,9 @@ type PageKey = 'timeline' | 'daily-report' | 'ai-task-generator' | 'settings';
 
 function App() {
   const [activePage, setActivePage] = useState<PageKey>('timeline');
-  const [appData, setAppData] = useState(loadAppData);
+  const [appData, setAppData] = useState(createDefaultAppData);
+  const [hasLoadedStoredData, setHasLoadedStoredData] = useState(false);
+  const saveTimeoutRef = useRef<number | undefined>();
   const language = appData.settings.language;
   const t = (key: Parameters<typeof translate>[1]) => translate(language, key);
   const pages = [
@@ -51,8 +53,46 @@ function App() {
   }>;
 
   useEffect(() => {
-    saveAppData(appData);
-  }, [appData]);
+    let isMounted = true;
+
+    loadAppData()
+      .then((storedData) => {
+        if (!isMounted) {
+          return;
+        }
+
+        setAppData(storedData);
+        setHasLoadedStoredData(true);
+      })
+      .catch(() => {
+        if (!isMounted) {
+          return;
+        }
+
+        setHasLoadedStoredData(true);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!hasLoadedStoredData) {
+      return undefined;
+    }
+
+    window.clearTimeout(saveTimeoutRef.current);
+    saveTimeoutRef.current = window.setTimeout(() => {
+      saveAppData(appData).catch(() => {
+        // Keep the UI responsive even if browser storage is temporarily unavailable.
+      });
+    }, 600);
+
+    return () => {
+      window.clearTimeout(saveTimeoutRef.current);
+    };
+  }, [appData, hasLoadedStoredData]);
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', appData.settings.theme === 'dark');
@@ -61,6 +101,7 @@ function App() {
   const pageContent = {
     timeline: (
       <TimelinePage
+        appData={appData}
         tasks={appData.tasks}
         language={language}
         weekStart={appData.settings.weekStart}
@@ -74,6 +115,7 @@ function App() {
         onSaveWorklog={(worklogData: WorklogFormData) =>
           setAppData((currentData) => saveWorklog(currentData, worklogData))
         }
+        onReplaceAppData={setAppData}
         onUpdateTask={(taskId: string, taskData: TaskFormData) =>
           setAppData((currentData) => updateTask(currentData, taskId, taskData))
         }
@@ -93,10 +135,8 @@ function App() {
     ),
     settings: (
       <SettingsPage
-        appData={appData}
         language={language}
         settings={appData.settings}
-        onReplaceAppData={setAppData}
         onUpdateSettings={(settings: AppSettings) =>
           setAppData((currentData) => updateSettings(currentData, settings))
         }

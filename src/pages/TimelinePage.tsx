@@ -1,9 +1,30 @@
-import { CalendarDays, ChevronLeft, ChevronRight, Edit3, Plus, Trash2 } from 'lucide-react';
+import {
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  Edit3,
+  FolderOpen,
+  Link,
+  Plus,
+  RefreshCw,
+  Save,
+  Trash2,
+} from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { TaskFormModal } from '../components/TaskFormModal';
 import { WorklogModal } from '../components/WorklogModal';
 import { translate } from '../helpers/i18n';
+import {
+  isLocalFileLinkSupported,
+  linkLocalDirectory,
+  linkLocalFile,
+  loadLocalFileLinkSettings,
+  readAppDataFromLinkedTarget,
+  saveLocalFileLinkSettings,
+  writeAppDataToLinkedTarget,
+  type LocalFileLinkSettings,
+} from '../services/localFileLinkService';
 import {
   addDays,
   addMonths,
@@ -26,6 +47,7 @@ import {
   getWeekTotal,
 } from '../helpers/worklogCalculator';
 import type {
+  AppData,
   AppLanguage,
   Task,
   TaskFormData,
@@ -35,12 +57,14 @@ import type {
 } from '../types/worklog';
 
 type TimelinePageProps = {
+  appData: AppData;
   language: AppLanguage;
   tasks: Task[];
   weekStart: WeekStart;
   worklogs: WorklogEntry[];
   onCreateTask: (taskData: TaskFormData) => void;
   onDeleteTask: (taskId: string) => void;
+  onReplaceAppData: (appData: AppData) => void;
   onSaveWorklog: (worklogData: WorklogFormData) => void;
   onUpdateTask: (taskId: string, taskData: TaskFormData) => void;
 };
@@ -51,14 +75,21 @@ type WorklogModalState = {
 };
 
 type TimelineViewMode = 'week' | 'rolling7' | 'month';
+type PendingTimelineConfirmation = {
+  kind: 'sync';
+  data: AppData;
+  fileName: string;
+};
 
 export function TimelinePage({
+  appData,
   language,
   tasks,
   weekStart,
   worklogs,
   onCreateTask,
   onDeleteTask,
+  onReplaceAppData,
   onSaveWorklog,
   onUpdateTask,
 }: TimelinePageProps) {
@@ -69,6 +100,12 @@ export function TimelinePage({
   const [editingTask, setEditingTask] = useState<Task | undefined>();
   const [deletingTask, setDeletingTask] = useState<Task | undefined>();
   const [loggingWorklog, setLoggingWorklog] = useState<WorklogModalState | undefined>();
+  const [fileLinkSettings, setFileLinkSettings] = useState<LocalFileLinkSettings>(() =>
+    loadLocalFileLinkSettings(),
+  );
+  const [fileLinkMessage, setFileLinkMessage] = useState('');
+  const [pendingConfirmation, setPendingConfirmation] =
+    useState<PendingTimelineConfirmation | undefined>();
   const visibleDays = useMemo(() => {
     if (viewMode === 'month') {
       return getMonthDays(selectedDate);
@@ -153,8 +190,162 @@ export function TimelinePage({
     setLoggingWorklog(undefined);
   }
 
+  async function handleLinkFile() {
+    try {
+      const nextSettings = await linkLocalFile();
+      setFileLinkSettings(nextSettings);
+      setFileLinkMessage(`${t('linkedTarget')}: ${nextSettings.localUrl}`);
+    } catch (error) {
+      setFileLinkMessage(error instanceof Error ? error.message : t('localLinkError'));
+    }
+  }
+
+  async function handleLinkFolder() {
+    try {
+      const nextSettings = await linkLocalDirectory();
+      setFileLinkSettings(nextSettings);
+      setFileLinkMessage(`${t('linkedTarget')}: ${nextSettings.localUrl}`);
+    } catch (error) {
+      setFileLinkMessage(error instanceof Error ? error.message : t('localLinkError'));
+    }
+  }
+
+  function updateFileLinkSettings(nextSettings: LocalFileLinkSettings) {
+    setFileLinkSettings(nextSettings);
+    saveLocalFileLinkSettings(nextSettings);
+  }
+
+  async function updateLinkedFile() {
+    try {
+      const fileName = await writeAppDataToLinkedTarget(appData, fileLinkSettings);
+      setFileLinkMessage(`${t('updateCompleted')} (${fileName})`);
+    } catch (error) {
+      setFileLinkMessage(error instanceof Error ? error.message : t('localLinkError'));
+    }
+  }
+
+  async function requestSyncFromLinkedFile() {
+    const readResult = await readAppDataFromLinkedTarget(fileLinkSettings);
+
+    if (!readResult.ok) {
+      setFileLinkMessage(readResult.error);
+      return;
+    }
+
+    setPendingConfirmation({
+      kind: 'sync',
+      data: readResult.data,
+      fileName: readResult.fileName,
+    });
+  }
+
+  function confirmSyncFromLinkedFile() {
+    if (!pendingConfirmation) {
+      return;
+    }
+
+    onReplaceAppData(pendingConfirmation.data);
+    setFileLinkMessage(`${t('syncCompleted')} (${pendingConfirmation.fileName})`);
+    setPendingConfirmation(undefined);
+  }
+
   return (
     <section className="space-y-5">
+      <div className="rounded-lg border border-slate-200 bg-white p-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-950">{t('localFileLink')}</h3>
+            <p className="mt-1 text-sm text-slate-500">{t('localFileLinkSubtitle')}</p>
+            <p className="mt-2 text-xs text-slate-500">
+              {fileLinkSettings.localUrl || t('noLinkedTarget')}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              className="inline-flex min-h-10 items-center gap-2 rounded-md bg-white px-3 text-sm font-medium text-slate-700 ring-1 ring-inset ring-slate-200 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={!isLocalFileLinkSupported()}
+              onClick={handleLinkFile}
+            >
+              <Link className="h-4 w-4" aria-hidden="true" />
+              {t('linkFile')}
+            </button>
+            <button
+              type="button"
+              className="inline-flex min-h-10 items-center gap-2 rounded-md bg-white px-3 text-sm font-medium text-slate-700 ring-1 ring-inset ring-slate-200 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={!isLocalFileLinkSupported()}
+              onClick={handleLinkFolder}
+            >
+              <FolderOpen className="h-4 w-4" aria-hidden="true" />
+              {t('linkFolder')}
+            </button>
+          </div>
+        </div>
+        {!isLocalFileLinkSupported() ? (
+          <p className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            {t('browserNotSupported')}
+          </p>
+        ) : null}
+        <div className="mt-4 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+          <div className="grid gap-3 sm:grid-cols-2 lg:min-w-[420px]">
+            <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+              <input
+                type="checkbox"
+                className="h-4 w-4 rounded border-slate-300"
+                checked={fileLinkSettings.copyMode}
+                disabled={fileLinkSettings.target !== 'directory'}
+                onChange={(event) =>
+                  updateFileLinkSettings({
+                    ...fileLinkSettings,
+                    copyMode: event.target.checked,
+                    updatedAt: new Date().toISOString(),
+                  })
+                }
+              />
+              {t('copyMode')}
+            </label>
+            <label className="space-y-1 text-sm font-medium text-slate-700">
+              <span>{t('maxCopies')}</span>
+              <input
+                type="number"
+                min="1"
+                max="100"
+                className="h-10 w-full rounded-md border border-slate-300 px-3 text-sm outline-none focus:border-slate-500"
+                value={fileLinkSettings.maxCopies}
+                onChange={(event) =>
+                  updateFileLinkSettings({
+                    ...fileLinkSettings,
+                    maxCopies: Math.max(1, Number(event.target.value) || 10),
+                    updatedAt: new Date().toISOString(),
+                  })
+                }
+              />
+            </label>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              className="inline-flex min-h-10 items-center gap-2 rounded-md bg-slate-950 px-3 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={!fileLinkSettings.target}
+              onClick={updateLinkedFile}
+            >
+              <Save className="h-4 w-4" aria-hidden="true" />
+              {t('updateLinkedFile')}
+            </button>
+            <button
+              type="button"
+              className="inline-flex min-h-10 items-center gap-2 rounded-md bg-white px-3 text-sm font-medium text-slate-700 ring-1 ring-inset ring-slate-200 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={!fileLinkSettings.target}
+              onClick={requestSyncFromLinkedFile}
+            >
+              <RefreshCw className="h-4 w-4" aria-hidden="true" />
+              {t('syncFromLinkedFile')}
+            </button>
+          </div>
+        </div>
+        <p className="mt-2 text-xs text-slate-500">{t('copyModeHint')}</p>
+        {fileLinkMessage ? <p className="mt-3 text-sm text-slate-600">{fileLinkMessage}</p> : null}
+      </div>
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h2 className="text-xl font-semibold text-slate-950">{t('timeline')}</h2>
@@ -245,7 +436,11 @@ export function TimelinePage({
                 >
                   <div className="px-4 py-4">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-semibold text-slate-950">{task.code}</span>
+                      {task.code ? (
+                        <span className="font-semibold text-slate-950">{task.code}</span>
+                      ) : (
+                        <span className="font-semibold text-slate-500">{t('quickTask')}</span>
+                      )}
                       <span className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium capitalize text-slate-600">
                         {task.status}
                       </span>
@@ -284,7 +479,7 @@ export function TimelinePage({
                           'body',
                         )}`}
                         onClick={() => setLoggingWorklog({ task, date: dateKey })}
-                        aria-label={`${t('logHours')} ${task.code} ${dateKey}`}
+                        aria-label={`${t('logHours')} ${task.code || task.title} ${dateKey}`}
                         title={t('logHours')}
                       >
                         {formatHours(hours)}
@@ -354,6 +549,21 @@ export function TimelinePage({
           title={t('deleteTaskTitle')}
           onCancel={() => setDeletingTask(undefined)}
           onConfirm={handleDeleteTask}
+        />
+      ) : null}
+      {pendingConfirmation ? (
+        <ConfirmDialog
+          cancelLabel={t('cancel')}
+          closeLabel={t('closeModal')}
+          confirmLabel={t('confirm')}
+          destructive
+          message={`${t('syncConfirmMessage')} (${pendingConfirmation.fileName})`}
+          title={t('syncConfirmTitle')}
+          onCancel={() => {
+            setFileLinkMessage(t('syncCancelled'));
+            setPendingConfirmation(undefined);
+          }}
+          onConfirm={confirmSyncFromLinkedFile}
         />
       ) : null}
     </section>

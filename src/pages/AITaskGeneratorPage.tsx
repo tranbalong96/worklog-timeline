@@ -71,7 +71,7 @@ export function AITaskGeneratorPage({ language, settings, onAddTask }: AITaskGen
   }
 
   function addPreviewToTimeline() {
-    if (!previewTask?.taskCode.trim() || !previewTask.taskTitle.trim()) {
+    if (!previewTask?.taskTitle.trim()) {
       setError(t('codeAndTitleRequired'));
       return;
     }
@@ -168,7 +168,7 @@ export function AITaskGeneratorPage({ language, settings, onAddTask }: AITaskGen
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="space-y-1 text-sm font-medium text-slate-700">
-              <span>{t('taskCode')}</span>
+              <span>{t('taskCodeOptional')}</span>
               <input
                 className="h-10 w-full rounded-md border border-slate-300 px-3 text-sm outline-none focus:border-slate-500"
                 value={previewTask?.taskCode ?? ''}
