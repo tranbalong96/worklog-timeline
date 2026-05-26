@@ -1,7 +1,16 @@
-import type { AIProvider, AISettings, Settings, WeekStart } from '../types/worklog';
+import { Download, RotateCcw, Upload } from 'lucide-react';
+import { useRef, useState, type ChangeEvent } from 'react';
+import {
+  createDefaultAppData,
+  exportAppDataToJson,
+  importAppDataFromJson,
+} from '../services/storageService';
+import type { AIProvider, AISettings, AppData, Settings, WeekStart } from '../types/worklog';
 
 type SettingsPageProps = {
+  appData: AppData;
   settings: Settings;
+  onReplaceAppData: (appData: AppData) => void;
   onUpdateSettings: (settings: Settings) => void;
 };
 
@@ -41,7 +50,15 @@ const providerDefaults: Record<AIProvider, Pick<AISettings, 'baseUrl' | 'model' 
   },
 };
 
-export function SettingsPage({ settings, onUpdateSettings }: SettingsPageProps) {
+export function SettingsPage({
+  appData,
+  settings,
+  onReplaceAppData,
+  onUpdateSettings,
+}: SettingsPageProps) {
+  const importInputRef = useRef<HTMLInputElement>(null);
+  const [backupMessage, setBackupMessage] = useState('');
+
   function updateGeneralSettings(nextSettings: Partial<Settings>) {
     onUpdateSettings({
       ...settings,
@@ -67,6 +84,78 @@ export function SettingsPage({ settings, onUpdateSettings }: SettingsPageProps) 
       provider,
       ...providerDefault,
     });
+  }
+
+  function exportJson() {
+    const backupJson = exportAppDataToJson(appData);
+    const backupBlob = new Blob([backupJson], {
+      type: 'application/json',
+    });
+    const backupUrl = URL.createObjectURL(backupBlob);
+    const downloadLink = document.createElement('a');
+
+    downloadLink.href = backupUrl;
+    downloadLink.download = `worklog-timeline-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    downloadLink.click();
+    URL.revokeObjectURL(backupUrl);
+    setBackupMessage('Backup exported.');
+  }
+
+  function requestImportJson() {
+    importInputRef.current?.click();
+  }
+
+  function importJson(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+
+    if (!file) {
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      const fileContent = typeof reader.result === 'string' ? reader.result : '';
+      const importResult = importAppDataFromJson(fileContent);
+
+      if (!importResult.ok) {
+        setBackupMessage(importResult.error);
+        return;
+      }
+
+      const shouldReplace = window.confirm(
+        'Importing this backup will replace all current Worklog Timeline data. Continue?',
+      );
+
+      if (!shouldReplace) {
+        setBackupMessage('Import cancelled.');
+        return;
+      }
+
+      onReplaceAppData(importResult.data);
+      setBackupMessage('Backup imported.');
+    };
+
+    reader.onerror = () => {
+      setBackupMessage('Could not read the selected file.');
+    };
+
+    reader.readAsText(file);
+  }
+
+  function resetData() {
+    const shouldReset = window.confirm(
+      'Reset all Worklog Timeline data to default mock data? This replaces current tasks, worklogs, reports, and settings.',
+    );
+
+    if (!shouldReset) {
+      setBackupMessage('Reset cancelled.');
+      return;
+    }
+
+    onReplaceAppData(createDefaultAppData());
+    setBackupMessage('Data reset.');
   }
 
   return (
@@ -195,6 +284,49 @@ export function SettingsPage({ settings, onUpdateSettings }: SettingsPageProps) 
             />
           </label>
         </div>
+      </div>
+
+      <div className="rounded-lg border border-slate-200 bg-white p-4">
+        <div>
+          <h3 className="text-sm font-semibold text-slate-950">Backup And Restore</h3>
+          <p className="mt-1 text-sm text-slate-500">
+            Export a JSON backup, restore from a backup file, or reset this browser data.
+          </p>
+        </div>
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+          <button
+            type="button"
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-white px-4 text-sm font-medium text-slate-700 ring-1 ring-inset ring-slate-200 hover:bg-slate-100"
+            onClick={exportJson}
+          >
+            <Download className="h-4 w-4" aria-hidden="true" />
+            Export JSON
+          </button>
+          <button
+            type="button"
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-white px-4 text-sm font-medium text-slate-700 ring-1 ring-inset ring-slate-200 hover:bg-slate-100"
+            onClick={requestImportJson}
+          >
+            <Upload className="h-4 w-4" aria-hidden="true" />
+            Import JSON
+          </button>
+          <button
+            type="button"
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-red-50 px-4 text-sm font-medium text-red-700 ring-1 ring-inset ring-red-200 hover:bg-red-100"
+            onClick={resetData}
+          >
+            <RotateCcw className="h-4 w-4" aria-hidden="true" />
+            Reset Data
+          </button>
+          <input
+            ref={importInputRef}
+            type="file"
+            accept="application/json,.json"
+            className="hidden"
+            onChange={importJson}
+          />
+        </div>
+        {backupMessage ? <p className="mt-3 text-sm text-slate-600">{backupMessage}</p> : null}
       </div>
     </section>
   );

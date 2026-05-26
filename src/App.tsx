@@ -83,7 +83,9 @@ function App() {
     ),
     settings: (
       <SettingsPage
+        appData={appData}
         settings={appData.settings}
+        onReplaceAppData={setAppData}
         onUpdateSettings={(settings: AppSettings) =>
           setAppData((currentData) => updateSettings(currentData, settings))
         }

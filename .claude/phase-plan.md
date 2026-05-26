@@ -86,7 +86,7 @@ Goal:
 - Improve empty states.
 
 Status:
-- pending
+- completed
 
 ## Phase 8 - QA And Refactor
 
