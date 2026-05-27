@@ -47,6 +47,7 @@ export const defaultAppData: AppData = {
       date: '2026-05-26',
       hours: 2,
       note: 'Initial project setup.',
+      status: 'draft',
       createdAt,
       updatedAt: createdAt,
     },

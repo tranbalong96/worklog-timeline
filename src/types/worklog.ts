@@ -2,6 +2,8 @@ export type TaskType = 'feature' | 'bug' | 'chore' | 'research' | 'meeting';
 
 export type TaskStatus = 'todo' | 'in-progress' | 'done';
 
+export type WorklogStatus = 'draft' | 'ready' | 'logged';
+
 export type WeekStart = 'monday' | 'sunday';
 
 export type AIProvider = 'disabled' | 'gemini' | 'openai-compatible' | 'ollama' | 'lm-studio';
@@ -27,6 +29,7 @@ export type WorklogEntry = {
   date: string;
   hours: number;
   note: string;
+  status: WorklogStatus;
   createdAt: string;
   updatedAt: string;
 };
@@ -77,6 +80,21 @@ export type WorklogFormData = {
   date: string;
   hours: number;
   note: string;
+  status?: WorklogStatus;
+};
+
+export type TodayWorklogFormData = {
+  taskCode: string;
+  taskTitle: string;
+  date: string;
+  hours: number;
+  note: string;
+  status?: WorklogStatus;
+};
+
+export type TodayWorklogUpdateData = TodayWorklogFormData & {
+  taskId: string;
+  worklogId: string;
 };
 
 export type GeneratedTask = {

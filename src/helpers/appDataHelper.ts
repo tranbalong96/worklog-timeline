@@ -3,6 +3,8 @@ import type {
   Settings,
   Task,
   TaskFormData,
+  TodayWorklogFormData,
+  TodayWorklogUpdateData,
   WorklogEntry,
   WorklogFormData,
 } from '../types/worklog';
@@ -65,20 +67,14 @@ export function saveWorklog(appData: AppData, worklogData: WorklogFormData): App
     (worklog) => !(worklog.taskId === worklogData.taskId && worklog.date === worklogData.date),
   );
 
-  if (worklogData.hours <= 0) {
-    return {
-      ...appData,
-      worklogs: remainingWorklogs,
-    };
-  }
-
   const now = getTimestamp();
   const worklog: WorklogEntry = {
     id: existingWorklog?.id ?? createId('worklog'),
     taskId: worklogData.taskId,
     date: worklogData.date,
-    hours: worklogData.hours,
+    hours: Math.max(0, worklogData.hours),
     note: worklogData.note,
+    status: worklogData.status ?? existingWorklog?.status ?? 'draft',
     createdAt: existingWorklog?.createdAt ?? now,
     updatedAt: now,
   };
@@ -86,6 +82,107 @@ export function saveWorklog(appData: AppData, worklogData: WorklogFormData): App
   return {
     ...appData,
     worklogs: [...remainingWorklogs, worklog],
+  };
+}
+
+export function addTodayWorklog(appData: AppData, worklogData: TodayWorklogFormData): AppData {
+  const now = getTimestamp();
+  const taskId = createId('task');
+  const task: Task = {
+    id: taskId,
+    code: worklogData.taskCode.trim(),
+    title: worklogData.taskTitle.trim(),
+    description: '',
+    type: 'chore',
+    status: worklogData.status === 'logged' ? 'done' : 'in-progress',
+    createdAt: now,
+    updatedAt: now,
+  };
+  const worklog: WorklogEntry = {
+    id: createId('worklog'),
+    taskId,
+    date: worklogData.date,
+    hours: Math.max(0, worklogData.hours),
+    note: worklogData.note.trim(),
+    status: worklogData.status ?? 'draft',
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  return {
+    ...appData,
+    tasks: [...appData.tasks, task],
+    worklogs: [...appData.worklogs, worklog],
+  };
+}
+
+export function updateTodayWorklog(
+  appData: AppData,
+  worklogData: TodayWorklogUpdateData,
+): AppData {
+  const now = getTimestamp();
+
+  return {
+    ...appData,
+    tasks: appData.tasks.map((task) =>
+      task.id === worklogData.taskId
+        ? {
+            ...task,
+            code: worklogData.taskCode.trim(),
+            title: worklogData.taskTitle.trim(),
+            status: worklogData.status === 'logged' ? 'done' : task.status,
+            updatedAt: now,
+          }
+        : task,
+    ),
+    worklogs: appData.worklogs.map((worklog) =>
+      worklog.id === worklogData.worklogId
+        ? {
+            ...worklog,
+            date: worklogData.date,
+            hours: Math.max(0, worklogData.hours),
+            note: worklogData.note.trim(),
+            status: worklogData.status ?? worklog.status,
+            updatedAt: now,
+          }
+        : worklog,
+    ),
+  };
+}
+
+export function deleteWorklog(appData: AppData, worklogId: string): AppData {
+  return {
+    ...appData,
+    worklogs: appData.worklogs.filter((worklog) => worklog.id !== worklogId),
+  };
+}
+
+export function markWorklogLogged(appData: AppData, worklogId: string): AppData {
+  const now = getTimestamp();
+  const targetWorklog = appData.worklogs.find((worklog) => worklog.id === worklogId);
+
+  return {
+    ...appData,
+    tasks: targetWorklog
+      ? appData.tasks.map((task) =>
+          task.id === targetWorklog.taskId
+            ? {
+                ...task,
+                status: 'done',
+                updatedAt: now,
+              }
+            : task,
+        )
+      : appData.tasks,
+    worklogs: appData.worklogs.map((worklog) =>
+      worklog.id === worklogId
+        ? {
+            ...worklog,
+            status: 'logged',
+            updatedAt: now,
+          }
+        : worklog,
+    ),
   };
 }
 

@@ -3,10 +3,11 @@ import { CalendarDays, FileText, Settings, Sparkles } from 'lucide-react';
 import { AppShell } from './components/AppShell';
 import {
   addTask,
-  deleteTask,
-  saveWorklog,
+  addTodayWorklog,
+  deleteWorklog,
+  markWorklogLogged,
+  updateTodayWorklog,
   updateSettings,
-  updateTask,
 } from './helpers/appDataHelper';
 import { AITaskGeneratorPage } from './pages/AITaskGeneratorPage';
 import { DailyReportPage } from './pages/DailyReportPage';
@@ -14,7 +15,12 @@ import { SettingsPage } from './pages/SettingsPage';
 import { TimelinePage } from './pages/TimelinePage';
 import { createDefaultAppData, loadAppData, saveAppData } from './services/storageService';
 import { translate } from './helpers/i18n';
-import type { Settings as AppSettings, TaskFormData, WorklogFormData } from './types/worklog';
+import type {
+  Settings as AppSettings,
+  TaskFormData,
+  TodayWorklogFormData,
+  TodayWorklogUpdateData,
+} from './types/worklog';
 
 type PageKey = 'timeline' | 'daily-report' | 'ai-task-generator' | 'settings';
 
@@ -28,7 +34,7 @@ function App() {
   const pages = [
     {
       key: 'timeline',
-      label: t('timeline'),
+      label: t('todayWorklog'),
       icon: CalendarDays,
     },
     {
@@ -101,23 +107,21 @@ function App() {
   const pageContent = {
     timeline: (
       <TimelinePage
-        appData={appData}
         tasks={appData.tasks}
         language={language}
         weekStart={appData.settings.weekStart}
         worklogs={appData.worklogs}
-        onCreateTask={(taskData: TaskFormData) =>
-          setAppData((currentData) => addTask(currentData, taskData))
+        onAddTodayWorklog={(worklogData: TodayWorklogFormData) =>
+          setAppData((currentData) => addTodayWorklog(currentData, worklogData))
         }
-        onDeleteTask={(taskId: string) =>
-          setAppData((currentData) => deleteTask(currentData, taskId))
+        onDeleteWorklog={(worklogId: string) =>
+          setAppData((currentData) => deleteWorklog(currentData, worklogId))
         }
-        onSaveWorklog={(worklogData: WorklogFormData) =>
-          setAppData((currentData) => saveWorklog(currentData, worklogData))
+        onMarkWorklogLogged={(worklogId: string) =>
+          setAppData((currentData) => markWorklogLogged(currentData, worklogId))
         }
-        onReplaceAppData={setAppData}
-        onUpdateTask={(taskId: string, taskData: TaskFormData) =>
-          setAppData((currentData) => updateTask(currentData, taskId, taskData))
+        onUpdateTodayWorklog={(worklogData: TodayWorklogUpdateData) =>
+          setAppData((currentData) => updateTodayWorklog(currentData, worklogData))
         }
       />
     ),

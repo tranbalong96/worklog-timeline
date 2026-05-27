@@ -117,7 +117,7 @@ export function DailyReportModal({
     return (
       <label
         key={item.id}
-        className="flex gap-3 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
+        className="flex gap-3 rounded-md border border-slate-200/80 bg-white/75 px-3 py-2 text-sm shadow-sm"
       >
         <input
           type="checkbox"
@@ -153,7 +153,7 @@ export function DailyReportModal({
             {previousItems.length > 0 ? (
               <div className="space-y-2">{previousItems.map(renderWorklogItem)}</div>
             ) : (
-              <p className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500">
+              <p className="app-panel-muted px-3 py-2 text-sm text-slate-500">
                 {t('noLoggedWorkLast7Days')}
               </p>
             )}
@@ -166,7 +166,7 @@ export function DailyReportModal({
             {todayItems.length > 0 ? (
               <div className="space-y-2">{todayItems.map(renderWorklogItem)}</div>
             ) : (
-              <p className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500">
+              <p className="app-panel-muted px-3 py-2 text-sm text-slate-500">
                 {t('noLoggedWorkSelectedDate')}
               </p>
             )}
@@ -176,14 +176,14 @@ export function DailyReportModal({
             <h3 className="text-sm font-semibold text-slate-950">{t('customTasks')}</h3>
             <div className="flex gap-2">
               <input
-                className="h-10 min-w-0 flex-1 rounded-md border border-slate-300 px-3 text-sm outline-none focus:border-slate-500"
+                className="field min-w-0 flex-1"
                 value={customTaskInput}
                 onChange={(event) => setCustomTaskInput(event.target.value)}
                 placeholder={t('addReportOnlyTask')}
               />
               <button
                 type="button"
-                className="inline-flex h-10 w-10 items-center justify-center rounded-md bg-slate-950 text-white hover:bg-slate-800"
+                className="btn-primary h-10 w-10 px-0"
                 onClick={addCustomTask}
                 aria-label={t('addCustomTask')}
                 title={t('addCustomTask')}
@@ -196,12 +196,12 @@ export function DailyReportModal({
                 {customTasks.map((task, index) => (
                   <div
                     key={`${task}-${index}`}
-                    className="flex items-center justify-between gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-700"
+                    className="flex items-center justify-between gap-2 rounded-md border border-slate-200/80 bg-white/70 px-3 py-2 text-sm text-slate-700 shadow-sm"
                   >
                     <span>{task}</span>
                     <button
                       type="button"
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-md text-red-700 hover:bg-red-50"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-md text-red-700 transition hover:bg-red-50"
                       onClick={() => removeCustomTask(index)}
                       aria-label={t('removeCustomTask')}
                       title={t('removeCustomTask')}
@@ -222,7 +222,7 @@ export function DailyReportModal({
               {copyStatus ? <span className="text-xs text-slate-500">{copyStatus}</span> : null}
               <button
                 type="button"
-                className="inline-flex min-h-9 items-center gap-2 rounded-md bg-slate-950 px-3 text-sm font-medium text-white hover:bg-slate-800"
+                className="btn-primary min-h-9 px-3"
                 onClick={copyPreview}
               >
                 <Clipboard className="h-4 w-4" aria-hidden="true" />
@@ -231,7 +231,7 @@ export function DailyReportModal({
             </div>
           </div>
           <textarea
-            className="min-h-[520px] w-full resize-y rounded-md border border-slate-300 bg-slate-50 px-3 py-2 font-mono text-sm leading-6 text-slate-800 outline-none focus:border-slate-500"
+            className="textarea-field min-h-[520px] resize-y bg-slate-50/85 font-mono text-sm leading-6"
             value={previewText}
             onChange={(event) => setPreviewText(event.target.value)}
           />

@@ -87,21 +87,22 @@ export function SettingsPage({
   return (
     <section className="space-y-5">
       <div>
-        <h2 className="text-xl font-semibold text-slate-950">{t('settings')}</h2>
+        <p className="eyebrow">{t('controlPanelEyebrow')}</p>
+        <h2 className="section-title mt-1">{t('settings')}</h2>
         <p className="mt-1 text-sm text-slate-600">{t('settingsSubtitle')}</p>
       </div>
 
-      <div className="rounded-lg border border-slate-200 bg-white p-4">
+      <div className="app-panel p-4">
         <h3 className="text-sm font-semibold text-slate-950">{t('general')}</h3>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <label className="space-y-1 text-sm font-medium text-slate-700">
+          <label className="label">
             <span>{t('defaultWorkHoursPerDay')}</span>
             <input
               type="number"
               min="1"
               max="24"
               step="0.25"
-              className="h-10 w-full rounded-md border border-slate-300 px-3 text-sm outline-none focus:border-slate-500"
+              className="field"
               value={settings.defaultWorkHoursPerDay}
               onChange={(event) =>
                 updateGeneralSettings({
@@ -110,10 +111,10 @@ export function SettingsPage({
               }
             />
           </label>
-          <label className="space-y-1 text-sm font-medium text-slate-700">
+          <label className="label">
             <span>{t('weekStart')}</span>
             <select
-              className="h-10 w-full rounded-md border border-slate-300 px-3 text-sm outline-none focus:border-slate-500"
+              className="field"
               value={settings.weekStart}
               onChange={(event) =>
                 updateGeneralSettings({
@@ -125,10 +126,10 @@ export function SettingsPage({
               <option value="sunday">{t('sunday')}</option>
             </select>
           </label>
-          <label className="space-y-1 text-sm font-medium text-slate-700">
+          <label className="label">
             <span>{t('language')}</span>
             <select
-              className="h-10 w-full rounded-md border border-slate-300 px-3 text-sm outline-none focus:border-slate-500"
+              className="field"
               value={settings.language}
               onChange={(event) =>
                 updateGeneralSettings({
@@ -140,10 +141,10 @@ export function SettingsPage({
               <option value="vi">{t('vietnamese')}</option>
             </select>
           </label>
-          <label className="space-y-1 text-sm font-medium text-slate-700">
+          <label className="label">
             <span>{t('theme')}</span>
             <select
-              className="h-10 w-full rounded-md border border-slate-300 px-3 text-sm outline-none focus:border-slate-500"
+              className="field"
               value={settings.theme}
               onChange={(event) =>
                 updateGeneralSettings({
@@ -158,7 +159,7 @@ export function SettingsPage({
         </div>
       </div>
 
-      <div className="rounded-lg border border-slate-200 bg-white p-4">
+      <div className="app-panel p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h3 className="text-sm font-semibold text-slate-950">{t('aiProvider')}</h3>
@@ -181,10 +182,10 @@ export function SettingsPage({
         </div>
 
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <label className="space-y-1 text-sm font-medium text-slate-700">
+          <label className="label">
             <span>{t('provider')}</span>
             <select
-              className="h-10 w-full rounded-md border border-slate-300 px-3 text-sm outline-none focus:border-slate-500"
+              className="field"
               value={settings.ai.provider}
               onChange={(event) => updateProvider(event.target.value as AIProvider)}
             >
@@ -195,35 +196,35 @@ export function SettingsPage({
               ))}
             </select>
           </label>
-          <label className="space-y-1 text-sm font-medium text-slate-700">
+          <label className="label">
             <span>{t('apiKey')}</span>
             <input
               type="password"
-              className="h-10 w-full rounded-md border border-slate-300 px-3 text-sm outline-none focus:border-slate-500"
+              className="field"
               value={settings.ai.apiKey}
               onChange={(event) => updateAISettings({ apiKey: event.target.value })}
               placeholder="Stored locally in this browser"
             />
           </label>
-          <label className="space-y-1 text-sm font-medium text-slate-700">
+          <label className="label">
             <span>{t('baseUrl')}</span>
             <input
-              className="h-10 w-full rounded-md border border-slate-300 px-3 text-sm outline-none focus:border-slate-500"
+              className="field"
               value={settings.ai.baseUrl}
               onChange={(event) => updateAISettings({ baseUrl: event.target.value })}
               placeholder="Provider endpoint"
             />
           </label>
-          <label className="space-y-1 text-sm font-medium text-slate-700">
+          <label className="label">
             <span>{t('model')}</span>
             <input
-              className="h-10 w-full rounded-md border border-slate-300 px-3 text-sm outline-none focus:border-slate-500"
+              className="field"
               value={settings.ai.model}
               onChange={(event) => updateAISettings({ model: event.target.value })}
               placeholder="Model name"
             />
           </label>
-          <label className="space-y-1 text-sm font-medium text-slate-700 sm:col-span-2">
+          <label className="label sm:col-span-2">
             <span>
               {t('temperature')}: {settings.ai.temperature}
             </span>

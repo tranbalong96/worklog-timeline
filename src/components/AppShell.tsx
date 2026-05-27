@@ -25,16 +25,19 @@ export function AppShell<Key extends string>({
   onPageChange,
 }: AppShellProps<Key>) {
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-950">
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
+    <div className="app-surface">
+      <header className="sticky top-0 z-40 border-b border-white/70 bg-white/70 backdrop-blur-2xl dark:border-slate-800/80 dark:bg-slate-950/70">
+        <div className="app-container flex flex-col gap-4 py-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <p className="text-sm font-medium text-slate-500">{subtitle}</p>
-            <h1 className="text-2xl font-semibold tracking-normal text-slate-950">
+            <p className="eyebrow">{subtitle}</p>
+            <h1 className="mt-1 text-2xl font-semibold tracking-normal text-slate-950">
               Worklog Timeline
             </h1>
           </div>
-          <nav className="flex gap-2 overflow-x-auto" aria-label={navLabel}>
+          <nav
+            className="flex gap-2 overflow-x-auto rounded-lg border border-slate-200/70 bg-slate-100/70 p-1 shadow-inner dark:border-slate-800 dark:bg-slate-900/70"
+            aria-label={navLabel}
+          >
             {pages.map((page) => {
               const Icon = page.icon;
               const isActive = page.key === activePage;
@@ -43,10 +46,10 @@ export function AppShell<Key extends string>({
                 <button
                   key={page.key}
                   type="button"
-                  className={`inline-flex min-h-10 shrink-0 items-center gap-2 rounded-md px-3 text-sm font-medium transition ${
+                  className={`inline-flex min-h-10 shrink-0 items-center gap-2 rounded-md px-3 text-sm font-semibold transition ${
                     isActive
-                      ? 'bg-slate-950 text-white shadow-sm'
-                      : 'bg-white text-slate-700 ring-1 ring-inset ring-slate-200 hover:bg-slate-100'
+                      ? 'bg-slate-950 text-white shadow-sm dark:bg-white dark:text-slate-950'
+                      : 'text-slate-600 hover:bg-white/80 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-800'
                   }`}
                   onClick={() => onPageChange(page.key)}
                 >
@@ -58,7 +61,7 @@ export function AppShell<Key extends string>({
           </nav>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8">{children}</main>
+      <main className="app-container py-6 lg:py-8">{children}</main>
     </div>
   );
 }

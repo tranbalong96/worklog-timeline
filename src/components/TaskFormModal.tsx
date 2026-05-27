@@ -44,18 +44,18 @@ export function TaskFormModal({ language, task, onClose, onSave }: TaskFormModal
     <Modal title={task ? t('editTask') : t('addTaskTitle')} closeLabel={t('closeModal')} onClose={onClose}>
       <form className="space-y-4 px-5 py-5" onSubmit={handleSubmit}>
         <div className="grid gap-4 sm:grid-cols-2">
-          <label className="space-y-1 text-sm font-medium text-slate-700">
+          <label className="label">
             <span>{t('taskCodeOptional')}</span>
             <input
-              className="h-10 w-full rounded-md border border-slate-300 px-3 text-sm outline-none focus:border-slate-500"
+              className="field"
               value={formData.code}
               onChange={(event) => updateField('code', event.target.value)}
             />
           </label>
-          <label className="space-y-1 text-sm font-medium text-slate-700">
+          <label className="label">
             <span>{t('status')}</span>
             <select
-              className="h-10 w-full rounded-md border border-slate-300 px-3 text-sm outline-none focus:border-slate-500"
+              className="field"
               value={formData.status}
               onChange={(event) => updateField('status', event.target.value as TaskStatus)}
             >
@@ -67,27 +67,27 @@ export function TaskFormModal({ language, task, onClose, onSave }: TaskFormModal
             </select>
           </label>
         </div>
-        <label className="block space-y-1 text-sm font-medium text-slate-700">
+        <label className="label block">
           <span>{t('title')}</span>
           <input
-            className="h-10 w-full rounded-md border border-slate-300 px-3 text-sm outline-none focus:border-slate-500"
+            className="field"
             value={formData.title}
             onChange={(event) => updateField('title', event.target.value)}
             required
           />
         </label>
-        <label className="block space-y-1 text-sm font-medium text-slate-700">
+        <label className="label block">
           <span>{t('description')}</span>
           <textarea
-            className="min-h-24 w-full resize-y rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
+            className="textarea-field min-h-24 resize-y"
             value={formData.description}
             onChange={(event) => updateField('description', event.target.value)}
           />
         </label>
-        <label className="block space-y-1 text-sm font-medium text-slate-700">
+        <label className="label block">
           <span>{t('type')}</span>
           <select
-            className="h-10 w-full rounded-md border border-slate-300 px-3 text-sm outline-none focus:border-slate-500"
+            className="field"
             value={formData.type}
             onChange={(event) => updateField('type', event.target.value as TaskType)}
           >
@@ -98,17 +98,17 @@ export function TaskFormModal({ language, task, onClose, onSave }: TaskFormModal
             ))}
           </select>
         </label>
-        <div className="flex justify-end gap-2 border-t border-slate-200 pt-4">
+        <div className="flex justify-end gap-2 border-t border-slate-200/80 pt-4">
           <button
             type="button"
-            className="inline-flex min-h-10 items-center rounded-md px-4 text-sm font-medium text-slate-700 ring-1 ring-inset ring-slate-200 hover:bg-slate-100"
+            className="btn-secondary"
             onClick={onClose}
           >
             {t('cancel')}
           </button>
           <button
             type="submit"
-            className="inline-flex min-h-10 items-center rounded-md bg-slate-950 px-4 text-sm font-medium text-white hover:bg-slate-800"
+            className="btn-primary"
           >
             {t('saveTask')}
           </button>

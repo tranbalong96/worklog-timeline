@@ -90,12 +90,13 @@ export function AITaskGeneratorPage({ language, settings, onAddTask }: AITaskGen
   return (
     <section className="space-y-5">
       <div>
-        <h2 className="text-xl font-semibold text-slate-950">{t('aiTaskGenerator')}</h2>
+        <p className="eyebrow">{t('aiWorkspaceEyebrow')}</p>
+        <h2 className="section-title mt-1">{t('aiTaskGenerator')}</h2>
         <p className="mt-1 text-sm text-slate-600">{t('aiSubtitle')}</p>
       </div>
 
       {showLocalhostWarning ? (
-        <div className="flex gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+        <div className="flex gap-3 rounded-lg border border-amber-200/80 bg-amber-50/90 p-4 text-sm text-amber-900 shadow-sm">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
           <p>
             {t('localhostWarning')}
@@ -104,7 +105,7 @@ export function AITaskGeneratorPage({ language, settings, onAddTask }: AITaskGen
       ) : null}
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
-        <div className="space-y-4 rounded-lg border border-slate-200 bg-white p-4">
+        <div className="app-panel space-y-4 p-4">
           <div className="flex items-center justify-between gap-3">
             <div>
               <h3 className="text-sm font-semibold text-slate-950">{t('developerNotes')}</h3>
@@ -114,7 +115,7 @@ export function AITaskGeneratorPage({ language, settings, onAddTask }: AITaskGen
             </div>
             <button
               type="button"
-              className="inline-flex min-h-10 items-center gap-2 rounded-md bg-slate-950 px-3 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+              className="btn-primary px-3"
               onClick={handleGenerate}
               disabled={isLoading || !settings.enabled || settings.provider === 'disabled'}
             >
@@ -123,7 +124,7 @@ export function AITaskGeneratorPage({ language, settings, onAddTask }: AITaskGen
             </button>
           </div>
           <textarea
-            className="min-h-56 w-full resize-y rounded-md border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-700 outline-none focus:border-slate-500"
+            className="textarea-field min-h-56 resize-y bg-slate-50/85"
             value={notes}
             onChange={(event) => setNotes(event.target.value)}
             placeholder={t('pasteNotes')}
@@ -145,20 +146,20 @@ export function AITaskGeneratorPage({ language, settings, onAddTask }: AITaskGen
             <label className="block space-y-1 text-sm font-medium text-slate-700">
               <span>{t('rawResponse')}</span>
               <textarea
-                className="min-h-32 w-full resize-y rounded-md border border-slate-300 bg-slate-50 px-3 py-2 font-mono text-xs text-slate-700 outline-none focus:border-slate-500"
-                value={rawResponse}
-                onChange={(event) => setRawResponse(event.target.value)}
+              className="textarea-field min-h-32 resize-y bg-slate-50/85 font-mono text-xs"
+              value={rawResponse}
+              onChange={(event) => setRawResponse(event.target.value)}
               />
             </label>
           ) : null}
         </div>
 
-        <div className="space-y-4 rounded-lg border border-slate-200 bg-white p-4">
+        <div className="app-panel space-y-4 p-4">
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-sm font-semibold text-slate-950">{t('editablePreview')}</h3>
             <button
               type="button"
-              className="inline-flex min-h-10 items-center gap-2 rounded-md bg-slate-950 px-3 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+              className="btn-primary px-3"
               onClick={addPreviewToTimeline}
               disabled={!previewTask}
             >
@@ -167,19 +168,19 @@ export function AITaskGeneratorPage({ language, settings, onAddTask }: AITaskGen
             </button>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
-            <label className="space-y-1 text-sm font-medium text-slate-700">
+            <label className="label">
               <span>{t('taskCodeOptional')}</span>
               <input
-                className="h-10 w-full rounded-md border border-slate-300 px-3 text-sm outline-none focus:border-slate-500"
+                className="field"
                 value={previewTask?.taskCode ?? ''}
                 onChange={(event) => updatePreview('taskCode', event.target.value)}
                 placeholder="WORKLOG-123"
               />
             </label>
-            <label className="space-y-1 text-sm font-medium text-slate-700">
+            <label className="label">
               <span>{t('type')}</span>
               <select
-                className="h-10 w-full rounded-md border border-slate-300 px-3 text-sm outline-none focus:border-slate-500"
+                className="field"
                 value={previewTask?.taskType ?? 'feature'}
                 onChange={(event) => updatePreview('taskType', event.target.value as TaskType)}
               >
@@ -191,19 +192,19 @@ export function AITaskGeneratorPage({ language, settings, onAddTask }: AITaskGen
               </select>
             </label>
           </div>
-          <label className="block space-y-1 text-sm font-medium text-slate-700">
+          <label className="label block">
             <span>{t('title')}</span>
             <input
-              className="h-10 w-full rounded-md border border-slate-300 px-3 text-sm outline-none focus:border-slate-500"
+              className="field"
               value={previewTask?.taskTitle ?? ''}
               onChange={(event) => updatePreview('taskTitle', event.target.value)}
               placeholder={t('generatedTaskTitle')}
             />
           </label>
-          <label className="block space-y-1 text-sm font-medium text-slate-700">
+          <label className="label block">
             <span>{t('description')}</span>
             <textarea
-              className="min-h-56 w-full resize-y rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
+              className="textarea-field min-h-56 resize-y"
               value={previewTask?.taskDescription ?? ''}
               onChange={(event) => updatePreview('taskDescription', event.target.value)}
               placeholder={t('generatedTaskDescription')}

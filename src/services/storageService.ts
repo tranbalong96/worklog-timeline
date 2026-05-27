@@ -8,6 +8,8 @@ import type {
   TaskStatus,
   TaskType,
   WeekStart,
+  WorklogEntry,
+  WorklogStatus,
 } from '../types/worklog';
 
 export const STORAGE_KEY = 'worklog_timeline_data_v1';
@@ -27,6 +29,7 @@ export type ImportAppDataResult =
 
 const taskTypes: TaskType[] = ['feature', 'bug', 'chore', 'research', 'meeting'];
 const taskStatuses: TaskStatus[] = ['todo', 'in-progress', 'done'];
+const worklogStatuses: WorklogStatus[] = ['draft', 'ready', 'logged'];
 const weekStarts: WeekStart[] = ['monday', 'sunday'];
 const appLanguages: AppLanguage[] = ['en', 'vi'];
 const appThemes: AppTheme[] = ['light', 'dark'];
@@ -82,6 +85,7 @@ function isWorklogEntry(value: unknown): boolean {
     isString(value.date) &&
     isNumber(value.hours) &&
     isString(value.note) &&
+    (!('status' in value) || worklogStatuses.includes(value.status as WorklogStatus)) &&
     isString(value.createdAt) &&
     isString(value.updatedAt)
   );
@@ -135,6 +139,14 @@ function normalizeAppData(appData: AppData): AppData {
   return {
     ...appData,
     settings: normalizeSettings(appData.settings),
+    worklogs: appData.worklogs.map((worklog) => normalizeWorklog(worklog)),
+  };
+}
+
+function normalizeWorklog(worklog: WorklogEntry): WorklogEntry {
+  return {
+    ...worklog,
+    status: worklogStatuses.includes(worklog.status) ? worklog.status : 'draft',
   };
 }
 
@@ -181,6 +193,36 @@ function canUseIndexedDb(): boolean {
 }
 
 export async function loadAppData(): Promise<AppData> {
+  if (canUseLocalStorage()) {
+    const storedValue = window.localStorage.getItem(STORAGE_KEY);
+
+    if (storedValue) {
+      try {
+        const parsedData: unknown = JSON.parse(storedValue);
+
+        if (isAppData(parsedData)) {
+          return normalizeAppData(parsedData);
+        }
+
+        if (
+          isRecord(parsedData) &&
+          parsedData.version === 1 &&
+          isLegacySettings(parsedData.settings) &&
+          Array.isArray(parsedData.tasks) &&
+          parsedData.tasks.every(isTask) &&
+          Array.isArray(parsedData.worklogs) &&
+          parsedData.worklogs.every(isWorklogEntry) &&
+          Array.isArray(parsedData.dailyReports) &&
+          parsedData.dailyReports.every(isDailyReport)
+        ) {
+          return normalizeAppData(parsedData as AppData);
+        }
+      } catch {
+        return cloneDefaultData();
+      }
+    }
+  }
+
   if (canUseIndexedDb()) {
     const indexedDbData = await loadAppDataFromIndexedDb();
 
@@ -189,52 +231,14 @@ export async function loadAppData(): Promise<AppData> {
     }
   }
 
-  if (!canUseLocalStorage()) {
-    return cloneDefaultData();
-  }
-
-  const storedValue = window.localStorage.getItem(STORAGE_KEY);
-
-  if (!storedValue) {
-    return cloneDefaultData();
-  }
-
-  try {
-    const parsedData: unknown = JSON.parse(storedValue);
-
-    if (isAppData(parsedData)) {
-      const normalizedData = normalizeAppData(parsedData);
-
-      await migrateLocalStorageDataToIndexedDb(normalizedData);
-
-      return normalizedData;
-    }
-
-    if (
-      isRecord(parsedData) &&
-      parsedData.version === 1 &&
-      isLegacySettings(parsedData.settings) &&
-      Array.isArray(parsedData.tasks) &&
-      parsedData.tasks.every(isTask) &&
-      Array.isArray(parsedData.worklogs) &&
-      parsedData.worklogs.every(isWorklogEntry) &&
-      Array.isArray(parsedData.dailyReports) &&
-      parsedData.dailyReports.every(isDailyReport)
-    ) {
-      const normalizedData = normalizeAppData(parsedData as AppData);
-
-      await migrateLocalStorageDataToIndexedDb(normalizedData);
-
-      return normalizedData;
-    }
-  } catch {
-    return cloneDefaultData();
-  }
-
   return cloneDefaultData();
 }
 
 export async function saveAppData(appData: AppData): Promise<void> {
+  if (canUseLocalStorage()) {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+  }
+
   if (!canUseIndexedDb()) {
     return;
   }
@@ -283,7 +287,7 @@ export function importAppDataFromJson(json: string): ImportAppDataResult {
 
     return {
       ok: true,
-      data: parsedData,
+      data: normalizeAppData(parsedData),
     };
   } catch {
     return {

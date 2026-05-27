@@ -17,17 +17,17 @@ export function Modal({
   onClose,
 }: ModalProps) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4 py-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 px-4 py-6 backdrop-blur-sm">
       <div
-        className={`max-h-[90vh] w-full overflow-y-auto rounded-lg bg-white shadow-xl ${maxWidthClassName}`}
+        className={`app-panel max-h-[90vh] w-full overflow-y-auto ${maxWidthClassName}`}
         role="dialog"
         aria-modal="true"
       >
-        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+        <div className="flex items-center justify-between border-b border-slate-200/80 px-5 py-4">
           <h2 className="text-lg font-semibold text-slate-950">{title}</h2>
           <button
             type="button"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+            className="btn-icon h-9 w-9"
             onClick={onClose}
             aria-label={closeLabel}
             title={closeLabel}
